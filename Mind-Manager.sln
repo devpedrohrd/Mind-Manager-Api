@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mind-Manager", "Mind-Manager.csproj", "{63E887EC-6882-8AE0-CB91-0DE3FD2627CD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{63E887EC-6882-8AE0-CB91-0DE3FD2627CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63E887EC-6882-8AE0-CB91-0DE3FD2627CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63E887EC-6882-8AE0-CB91-0DE3FD2627CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63E887EC-6882-8AE0-CB91-0DE3FD2627CD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {61A40607-9BBE-4712-A38C-5BDB08B17CB1}
+	EndGlobalSection
+EndGlobal
