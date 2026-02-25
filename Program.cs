@@ -11,6 +11,9 @@ using Mind_Manager.src.Application.Services;
 using System.Text.Json.Serialization;
 using Mind_Manager.Domain.Validators;
 using Mind_Manager.Application.Authorization;
+using Mind_Manager.src.Domain.Interfaces;
+using Mind_Manager.src.Infrastructure.Repository;
+using ISession = Mind_Manager.src.Domain.Interfaces.ISession;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,14 +25,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-    
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,  
+        Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -83,13 +87,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnChallenge = context =>
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogWarning("JWT Challenge triggered. Error: {Error}, ErrorDescription: {ErrorDescription}", 
+                logger.LogWarning("JWT Challenge triggered. Error: {Error}, ErrorDescription: {ErrorDescription}",
                     context.Error, context.ErrorDescription);
                 return Task.CompletedTask;
             }
         };
     });
- 
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
+    });
+
 builder.Services.AddAuthorizationBuilder()
      .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"))
      .AddPolicy("PsychologistOrAdmin", policy => policy.RequireRole("Admin", "Psychologist"))
@@ -112,8 +123,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null);
     })
-    .EnableServiceProviderCaching(false) // Evita cache de service provider para threading
-    .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())); // Logging apenas em dev
+    .EnableServiceProviderCaching(false)); // Evita cache de service provider para threading
+
 
 // ========================================
 // CONFIGURAÇÃO 3: DEPENDENCY INJECTION (DI Container)
@@ -121,9 +132,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<Mind_Manager.Domain.Interfaces.IUnitOfWork, Mind_Manager.Infrastructure.UnitOfWork.UnitOfWork>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<Mind_Manager.src.Domain.Interfaces.IAppointment, Mind_Manager.src.Infrastructure.Repository.AppointmentRepository>();
+builder.Services.AddScoped<IAppointment, AppointmentRepository>();
+builder.Services.AddScoped<IPsychologist, PsychologistRepository>();
+builder.Services.AddScoped<IPatient, PatientRepository>();
+builder.Services.AddScoped<ISession, SessionRepository>();
 builder.Services.AddScoped<IUserValidator, UserValidator>();
-builder.Services.AddScoped<Mind_Manager.Application.Authorization.IAuthorizationService, AuthorizationService>();
+builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -131,7 +145,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPsychologistService, PsychologistService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
-
+builder.Services.AddScoped<ISessionService, SessionService>();
 
 builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.NotFoundExceptionHandler>();
 builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.BusinessExceptionHandler>();

@@ -3,12 +3,11 @@ using Mind_Manager.Domain.Interfaces;
 using Mind_Manager.Infrastructure.Persistence;
 using Mind_Manager.src.Domain.Interfaces;
 using Mind_Manager.src.Infrastructure.Repository;
-
 namespace Mind_Manager.Infrastructure.UnitOfWork;
 
-public class UnitOfWork : IUnitOfWork
+public class UnitOfWork(ApplicationDbContext context) : IUnitOfWork
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ApplicationDbContext _context = context;
     private IDbContextTransaction? _transaction;
     private IUserRepository? _userRepository;
 
@@ -17,11 +16,7 @@ public class UnitOfWork : IUnitOfWork
     private IPatient? _patientRepository;
 
     private IAppointment? _appointmentRepository;
-
-    public UnitOfWork(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+    private src.Domain.Interfaces.ISession? _sessionRepository;
 
     public IUserRepository Users => _userRepository ??= new UserRepository(_context);
 
@@ -30,6 +25,8 @@ public class UnitOfWork : IUnitOfWork
     public IPatient Patients => _patientRepository ??= new PatientRepository(_context);
 
     public IAppointment Appointments => _appointmentRepository ??= new AppointmentRepository(_context);
+
+    public src.Domain.Interfaces.ISession Sessions => _sessionRepository ??= new SessionRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
