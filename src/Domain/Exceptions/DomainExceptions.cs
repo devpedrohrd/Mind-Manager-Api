@@ -31,3 +31,11 @@ public class ForbiddenException : Exception
     public ForbiddenException(string message, Exception inner) 
         : base(message, inner) { }
 }
+
+public class UnauthorizedException : Exception
+{
+    public UnauthorizedException(string message) : base(message) { }
+
+    public UnauthorizedException(string message, Exception inner) 
+        : base(message, inner) { }
+}

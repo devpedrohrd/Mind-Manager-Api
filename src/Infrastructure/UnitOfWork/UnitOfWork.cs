@@ -16,6 +16,8 @@ public class UnitOfWork : IUnitOfWork
 
     private IPatient? _patientRepository;
 
+    private IAppointment? _appointmentRepository;
+
     public UnitOfWork(ApplicationDbContext context)
     {
         _context = context;
@@ -26,6 +28,8 @@ public class UnitOfWork : IUnitOfWork
     public IPsychologist Psychologists => _psychologistRepository ??= new PsychologistRepository(_context);
 
     public IPatient Patients => _patientRepository ??= new PatientRepository(_context);
+
+    public IAppointment Appointments => _appointmentRepository ??= new AppointmentRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

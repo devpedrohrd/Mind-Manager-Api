@@ -111,7 +111,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
             maxRetryCount: 3,
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null);
-    }));
+    })
+    .EnableServiceProviderCaching(false) // Evita cache de service provider para threading
+    .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())); // Logging apenas em dev
 
 // ========================================
 // CONFIGURAÇÃO 3: DEPENDENCY INJECTION (DI Container)
@@ -119,6 +121,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<Mind_Manager.Domain.Interfaces.IUnitOfWork, Mind_Manager.Infrastructure.UnitOfWork.UnitOfWork>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<Mind_Manager.src.Domain.Interfaces.IAppointment, Mind_Manager.src.Infrastructure.Repository.AppointmentRepository>();
 builder.Services.AddScoped<IUserValidator, UserValidator>();
 builder.Services.AddScoped<Mind_Manager.Application.Authorization.IAuthorizationService, AuthorizationService>();
 
@@ -127,6 +130,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPsychologistService, PsychologistService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
 
 builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.NotFoundExceptionHandler>();
