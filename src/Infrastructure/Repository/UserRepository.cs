@@ -7,14 +7,9 @@ using Mind_Manager.src.Domain.DTO;
 
 namespace Mind_Manager;
 
-public class UserRepository : IUserRepository
+public class UserRepository(ApplicationDbContext context) : IUserRepository
 {
-    private readonly ApplicationDbContext _context;
-
-    public UserRepository(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+    private readonly ApplicationDbContext _context = context;
 
     public async Task<User> AddAsync(User user)
     {
@@ -63,7 +58,6 @@ public class UserRepository : IUserRepository
 
         if (filters.IncludeProfile)
         {
-            // Se filtrou por um papel específico, inclui só o perfil correspondente
             if (filters.Role == UserRole.Psychologist)
             {
                 query = query.Include(u => u.PsychologistProfile);
@@ -74,7 +68,6 @@ public class UserRepository : IUserRepository
             }
             else
             {
-                // Admin ou sem filtro: inclui ambos
                 query = query
                     .Include(u => u.PsychologistProfile)
                     .Include(u => u.PatientProfile);

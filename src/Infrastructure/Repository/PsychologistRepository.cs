@@ -5,14 +5,10 @@ using Mind_Manager.src.Domain.DTO;
 
 namespace Mind_Manager;
 
-public class PsychologistRepository : IPsychologist
+public class PsychologistRepository(ApplicationDbContext context) : IPsychologist
 {
-    public readonly ApplicationDbContext _context;
+    public readonly ApplicationDbContext _context = context;
 
-    public PsychologistRepository(ApplicationDbContext context)
-    {
-        _context = context;
-    }
     public async Task<PsychologistProfile?> CreateAsync(PsychologistProfile createDto)
     {
         _context.PsychologistProfiles.Add(createDto);
@@ -40,9 +36,9 @@ public class PsychologistRepository : IPsychologist
             .FirstOrDefaultAsync(p => p.UserId == userId);
     }
 
-    public Task<PsychologistProfile?> GetByIdAsync(Guid id)
+    public async Task<PsychologistProfile?> GetByIdAsync(Guid id)
     {
-        return _context.PsychologistProfiles
+        return await _context.PsychologistProfiles
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 }

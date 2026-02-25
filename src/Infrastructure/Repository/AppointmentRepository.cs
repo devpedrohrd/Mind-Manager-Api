@@ -9,14 +9,9 @@ using Mind_Manager.src.Application.Mappers;
 
 namespace Mind_Manager.src.Infrastructure.Repository;
 
-public class AppointmentRepository : IAppointment
+public class AppointmentRepository(ApplicationDbContext context) : IAppointment
 {
-    private readonly ApplicationDbContext _context;
-
-    public AppointmentRepository(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+    private readonly ApplicationDbContext _context = context;
 
     public async Task<ActionResult<Appointment>> CreateAppointmentAsync(Appointment createAppointmentDto)
     {

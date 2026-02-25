@@ -18,20 +18,14 @@ public interface IAppointmentService
     Task<bool> UpdateAppointmentAsync(Guid appointmentId, UpdateAppointmentCommand updateAppointmentDto, Guid userIdRequesting, bool isPsychologist);
 }
 
-public class AppointmentService : IAppointmentService
+public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork unitOfWork, IPatientService patientService, IPsychologistService psychologistService) : IAppointmentService
 {
-    private readonly IAppointment _appointmentRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAppointment _appointmentRepository = appointmentRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-    private readonly IPatientService _patientService;
-    private readonly IPsychologistService _psychologistService;
-    public AppointmentService(IAppointment appointmentRepository, IUnitOfWork unitOfWork, IPatientService patientService, IPsychologistService psychologistService)
-    {
-        _appointmentRepository = appointmentRepository;
-        _unitOfWork = unitOfWork;
-        _patientService = patientService;
-        _psychologistService = psychologistService;
-    }
+    private readonly IPatientService _patientService = patientService;
+    private readonly IPsychologistService _psychologistService = psychologistService;
+
     public async Task<AppointmentResponse> CreateAppointmentAsync(CreateAppointmentCommand createAppointmentDto)
     {
         var psychologist = await _psychologistService.GetByUserIdAsync(createAppointmentDto.PsychologistId ?? Guid.Empty)
@@ -81,10 +75,7 @@ public class AppointmentService : IAppointmentService
 
     public async Task<AppointmentResponse> GetAppointmentByIdAsync(Guid appointmentId, Guid userIdRequesting, string userRole)
     {
-        var result = await _appointmentRepository.GetAppointmentByIdAsync(appointmentId);
-
-        if (result == null)
-            throw new NotFoundException("Appointment not found.");
+        var result = await _appointmentRepository.GetAppointmentByIdAsync(appointmentId) ?? throw new NotFoundException("Appointment not found.");
 
         // Validação de permissão
         if (userRole != UserRole.Admin.ToString())

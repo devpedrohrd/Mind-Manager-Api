@@ -6,15 +6,10 @@ using Mind_Manager.src.Infrastructure.Specifications;
 
 namespace Mind_Manager.src.Infrastructure.Repository;
 
-public class PatientRepository : IPatient
+public class PatientRepository(ApplicationDbContext context) : IPatient
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ApplicationDbContext _context = context;
 
-    public PatientRepository(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-    
     public async Task<PatientProfile> CreatePatientProfileAsync(PatientProfile createPatientProfileDto)
     {
         _context.PatientProfiles.Add(createPatientProfileDto);

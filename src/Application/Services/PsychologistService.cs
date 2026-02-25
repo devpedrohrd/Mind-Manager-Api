@@ -10,6 +10,8 @@ public interface IPsychologistService
     Task<PsychologistResponse> CreateAsync(CreatePsychologistCommand createDto);
     Task<PsychologistResponse> UpdateAsync(Guid id, UpdatePsychologistCommand updateDto, Guid? userId = null, string? userRole = null);
     Task<PsychologistResponse?> GetByUserIdAsync(Guid userId);
+
+    Task<PsychologistResponse?> GetByIdAsync(Guid id);
 }
 
 public class PsychologistService : IPsychologistService
@@ -82,6 +84,20 @@ public class PsychologistService : IPsychologistService
     public async Task<PsychologistResponse?> GetByUserIdAsync(Guid userId)
     {
         var psychologist = await _unitOfWork.Psychologists.GetByUserIdAsync(userId);
+        if (psychologist == null)
+            return null;
+
+        return new PsychologistResponse(
+            Id: psychologist.Id,
+            UserId: psychologist.UserId,
+            Specialty: psychologist.Specialty,
+            Crp: psychologist.Crp
+        );
+    }
+
+    public async Task<PsychologistResponse?> GetByIdAsync(Guid id)
+    {
+        var psychologist = await _unitOfWork.Psychologists.GetByIdAsync(id);
         if (psychologist == null)
             return null;
 
