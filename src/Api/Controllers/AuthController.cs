@@ -21,6 +21,15 @@ public class AuthController : ControllerBase
         _userService = userService;
     }
 
+    /// <summary>
+    /// Criar um novo usuário
+    /// </summary>
+    /// <param name="createUserDto">Dados para criação do usuário</param>
+    /// <returns>Retorna o usuário criado ou erro</returns>
+    /// <remarks>
+    /// Este endpoint é público e pode ser acessado por qualquer pessoa para criar uma conta.
+    /// O campo "Role" no CreateUserCommand deve ser preenchido com "Patient" para criar uma conta de paciente. Contas de psicólogo e administrador devem ser criadas por um administrador usando o endpoint de criação de usuário com autenticação.
+    /// </remarks>
     [HttpPost("register")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -42,6 +51,14 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Autenticar um usuário e obter tokens de acesso e refresh
+    /// </summary>
+    /// <param name="authDto"></param>
+    /// <returns></returns>
+    /// <remarks>
+    /// Este endpoint é público e pode ser acessado por qualquer pessoa para autenticar e obter tokens. O campo "Email" deve conter o email do usuário e o campo "Password" deve conter a senha do usuário.
+    /// </remarks>
     [HttpPost("login")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -60,6 +77,14 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Atualizar token de acesso usando um token de refresh válido
+    /// </summary>
+    /// <param name="refreshToken"></param>
+    /// <returns></returns>
+    /// <remarks>
+    /// Este endpoint é protegido e requer autenticação. O campo "RefreshToken" deve conter um token de refresh válido que foi emitido anteriormente para o usuário.
+    /// </remarks>
     [Authorize]
     [HttpPost("refresh")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -79,6 +104,9 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Solicitar recuperação de senha por email
+    /// </summary>
     [HttpPost("forgot-password")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -104,6 +132,14 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Redefinir senha de um usuário usando um token de recuperação válido e uma nova senha
+    /// </summary>
+    /// <param name="resetPasswordDto">Dados para redefinir senha</param>
+    /// <returns>Retorna status de sucesso ou erro</returns>
+    /// <remarks>
+    /// Este endpoint é público e pode ser acessado por qualquer pessoa para redefinir a senha de um usuário. O campo "Token" deve conter um token de recuperação válido que foi emitido anteriormente para o usuário, e o campo "NewPassword" deve conter a nova senha que o usuário deseja definir.
+    /// </remarks>
     [HttpPost("reset-password")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

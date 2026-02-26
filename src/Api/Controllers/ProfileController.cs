@@ -25,6 +25,14 @@ public class ProfileController : ControllerBase
         _userLoggedHandller = userLoggedHandller;
     }
 
+    /// <summary>
+    ///  Criar perfil de paciente
+    /// </summary>
+    /// <param name="createDto">Dados para criação do perfil de paciente</param>
+    /// <returns>Retorna o perfil de paciente criado ou erro</returns>
+    /// <remarks>
+    /// Somente psicólogos e administradores podem criar perfis de pacientes. Pacientes não têm permissão para criar perfis.
+     /// </remarks>
     [HttpPost("patient")]
     [Authorize(Roles = "Psychologist,Admin")]
     [ProducesResponseType(typeof(PatientProfileResponse), StatusCodes.Status201Created)]
@@ -51,8 +59,14 @@ public class ProfileController : ControllerBase
     }
 
     /// <summary>
-    /// Psychologist ou Admin pode atualizar perfil de paciente
+    /// Atualizar perfil de paciente
     /// </summary>
+    /// <param name="id">ID do paciente a ser atualizado</param>
+    /// <param name="patientProfileDto">Dados a serem atualizados no perfil de paciente</param>
+    /// <returns>Retorna o perfil de paciente atualizado ou erro</returns>
+    /// <remarks>
+    /// Somente psicólogos e administradores podem atualizar perfis de pacientes. Pacientes não têm permissão para atualizar perfis.
+    /// </remarks>
     [Authorize(Roles = "Psychologist,Admin")]
     [HttpPatch("patient/{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -76,7 +90,13 @@ public class ProfileController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
-
+    /// <summary>
+    /// Buscar perfis de pacientes
+    /// </summary>
+    /// <returns>Retorna os perfis de pacientes encontrados ou erro</returns>
+    /// <remarks>
+    /// Psicólogos, administradores e clientes podem buscar perfis de pacientes com filtros.
+    /// </remarks>
     [HttpGet("patients/search")]
     [Authorize(Roles = "Psychologist,Admin,Client")]
     [ProducesResponseType(typeof(SearchPatientsResponse), StatusCodes.Status200OK)]
@@ -119,6 +139,14 @@ public class ProfileController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///  Criar perfil de psicólogo
+    /// </summary>
+    /// <param name="createPsychologistDto"></param>
+    /// <returns></returns>
+    /// <remarks>
+    /// Somente psicólogos e administradores podem criar perfis de psicólogos. Pacientes não têm permissão para criar perfis.
+    /// </remarks>
     [HttpPost("psychologist")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -143,6 +171,14 @@ public class ProfileController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///  Atualizar perfil de psicólogo
+    /// </summary>
+    /// <param name="updatePsychologistDto"></param>
+    /// <returns></returns>
+    /// <remarks>
+    /// Somente psicólogos e administradores podem atualizar perfis de psicólogos. Pacientes não têm permissão para atualizar perfis.
+    /// </remarks>
     [Authorize(Roles = "Psychologist,Admin")]
     [HttpPatch("psychologist")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -166,6 +202,11 @@ public class ProfileController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///  Buscar perfil de paciente por ID
+    /// </summary>
+    /// <param name="filters"></param>
+    /// <returns></returns>
     [HttpGet()]
     [Authorize(Roles = "Psychologist,Client")]
     [ProducesResponseType(typeof(SearchPatientsResponse), StatusCodes.Status200OK)]

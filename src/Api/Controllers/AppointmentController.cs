@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Mind_Manager.src.Application.Services;
 using Mind_Manager.src.Domain.DTO;
 using Mind_Manager.Domain.Exceptions;
+using System.ComponentModel;
 
 namespace Mind_Manager.Api.Controllers;
 
@@ -22,6 +23,14 @@ public class AppointmentController : ControllerBase
 
     }
 
+    /// <summary>
+    /// Buscar agendamentos com filtros e paginação
+    /// </summary>
+    /// <param name="query">Filtros para busca de agendamentos</param>
+    /// <returns>Retorna lista de agendamentos encontrados</returns>
+    /// <remarks>
+    /// Administradores podem buscar todos os agendamentos. Psicólogos podem buscar agendamentos relacionados a eles e administradores. Pacientes só podem buscar agendamentos relacionados a eles.
+    /// </remarks>
     [Authorize(Roles = "Admin,Psychologist")]
     [HttpGet("search")]
     [ProducesResponseType(typeof(SearchAppointmentsResponse), StatusCodes.Status200OK)]
@@ -46,6 +55,17 @@ public class AppointmentController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Buscar agendamentos por período (hoje, esta semana, este mês)
+    /// </summary>
+    /// <param name="period">Período para busca (today, week, month)</param>
+    /// <param name="status">Status do agendamento para filtrar (opcional)</param>
+    /// <param name="page">Número da página para paginação (opcional, padrão: 1)</param>
+    /// <param name="limit">Número de itens por página para paginação (opcional, padrão: 10)</param>
+    /// <returns>Retorna lista de agendamentos encontrados</returns>
+    /// <remarks>
+    /// Administradores podem buscar todos os agendamentos. Psicólogos podem buscar agendamentos relacionados a eles e administradores. Pacientes só podem buscar agendamentos relacionados a eles.
+    /// </remarks>
     [Authorize(Roles = "Admin,Psychologist")]
     [HttpGet("period/{period}")]
     [ProducesResponseType(typeof(SearchAppointmentsResponse), StatusCodes.Status200OK)]
@@ -64,11 +84,12 @@ public class AppointmentController : ControllerBase
             throw new UnauthorizedAccessException("User ID or role not found.");
         }
 
+        var todayUtc = DateTime.UtcNow.Date;
         var (startDate, endDate) = period.ToLower() switch
         {
-            "today" => (DateTime.Today, DateTime.Today.AddDays(1).AddTicks(-1)),
-            "week" => GetCurrentWeekRange(),
-            "month" => GetCurrentMonthRange(),
+            "today" => (todayUtc, todayUtc.AddDays(1).AddTicks(-1)),
+            "week" => GetCurrentWeekRange(todayUtc),
+            "month" => GetCurrentMonthRange(todayUtc),
             _ => throw new ArgumentException("Período inválido. Use: today, week, month")
         };
 
@@ -96,22 +117,28 @@ public class AppointmentController : ControllerBase
         return Ok(result);
     }
 
-    private static (DateTime start, DateTime end) GetCurrentWeekRange()
+    private static (DateTime start, DateTime end) GetCurrentWeekRange(DateTime todayUtc)
     {
-        var today = DateTime.Today;
-        var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
+        var startOfWeek = todayUtc.AddDays(-(int)todayUtc.DayOfWeek);
         var endOfWeek = startOfWeek.AddDays(7).AddTicks(-1);
         return (startOfWeek, endOfWeek);
     }
 
-    private static (DateTime start, DateTime end) GetCurrentMonthRange()
+    private static (DateTime start, DateTime end) GetCurrentMonthRange(DateTime todayUtc)
     {
-        var today = DateTime.Today;
-        var startOfMonth = new DateTime(today.Year, today.Month, 1);
+        var startOfMonth = new DateTime(todayUtc.Year, todayUtc.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var endOfMonth = startOfMonth.AddMonths(1).AddTicks(-1);
         return (startOfMonth, endOfMonth);
     }
 
+    /// <summary>
+    /// Buscar agendamentos relacionados ao psicólogo ou paciente logado
+    /// </summary>
+    /// <param name="id">ID do psicólogo ou paciente para buscar agendamentos relacionados</param>
+    /// <returns>Retorna lista de agendamentos encontrados</returns>
+    /// <remarks>
+    /// Psicólogos podem buscar agendamentos relacionados a eles e administradores. Pacientes só podem buscar agendamentos relacionados a eles.
+    /// </remarks>
     [Authorize(Roles = "Psychologist, Client")]
     [HttpGet("my-appointments/{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -141,6 +168,14 @@ public class AppointmentController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Criar um novo agendamento
+    /// </summary>
+    /// <param name="appointmentDto">Dados para criação do agendamento</param>
+    /// <returns>Retorna o agendamento criado ou erro</returns>
+    /// <remarks>
+    /// Somente psicólogos e administradores podem criar agendamentos. Pacientes não têm permissão para criar agendamentos.
+    /// </remarks>
     [Authorize(Roles = "Admin,Psychologist")]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -166,7 +201,15 @@ public class AppointmentController : ControllerBase
         return result;
     }
 
-
+    /// <summary>
+    /// Atualizar um agendamento existente
+    /// </summary>
+    /// <param name="id">ID do agendamento a ser atualizado</param>
+    /// <param name="appointmentDto">Dados para atualização do agendamento</param>
+    /// <returns>Retorna o agendamento atualizado ou erro</returns>
+    /// <remarks>
+    /// Somente psicólogos e administradores podem atualizar agendamentos. Pacientes não têm permissão para atualizar agendamentos.
+    /// </remarks>
     [Authorize(Roles = "Admin,Psychologist")]
     [HttpPatch("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -195,6 +238,14 @@ public class AppointmentController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Excluir um agendamento por ID
+    /// </summary>
+    /// <param name="id">ID do agendamento a ser excluído</param>
+    /// <returns>Retorna status de sucesso ou erro</returns>
+    /// <remarks>
+    /// Somente psicólogos e administradores podem excluir agendamentos. Pacientes não têm permissão para excluir agendamentos.
+    /// </remarks>
     [Authorize(Roles = "Admin,Psychologist")]
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -208,6 +259,14 @@ public class AppointmentController : ControllerBase
         return result ? Ok(new { message = $"Agendamento {id} deletado com sucesso." }) : NotFound(new { message = $"Agendamento {id} não encontrado." });
     }
 
+    /// <summary>
+    /// Buscar um agendamento por ID
+    /// </summary>
+    /// <param name="id">ID do agendamento a ser buscado</param>
+    /// <returns>Retorna o agendamento encontrado ou erro</returns>
+    /// <remarks>
+    /// Administradores podem buscar qualquer agendamento. Psicólogos podem buscar agendamentos relacionados a eles e administradores. Pacientes só podem buscar agendamentos relacionados a eles.
+    /// </remarks>
     [Authorize(Roles = "Admin,Psychologist,Client")]
     [HttpGet("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]

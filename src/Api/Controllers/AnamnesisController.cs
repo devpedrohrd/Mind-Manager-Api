@@ -13,6 +13,14 @@ namespace Mind_Manager.src.Api.Controllers
         private readonly IAnamneseService _anamneseService = anamneseService;
         private readonly IUserLoggedHandller _userLoggedHandller = userLoggedHandller;
 
+        /// <summary>
+        /// Criar uma nova anamnese para um paciente
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// Somente psicólogos podem criar anamneses. Pacientes e administradores não têm permissão para criar anamneses.
+        /// </remarks>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -25,6 +33,14 @@ namespace Mind_Manager.src.Api.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Buscar uma anamnese por ID
+        /// </summary>
+        /// <param name="anamnesisId">ID da anamnese a ser buscada</param>
+        /// <returns>Retorna a anamnese encontrada ou erro</returns>
+        /// <remarks>
+        /// Psicólogos, administradores e pacientes podem buscar anamneses por ID. Pacientes só podem acessar anamneses relacionadas a eles.
+        /// </remarks>
         [HttpGet("{anamnesisId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -39,6 +55,15 @@ namespace Mind_Manager.src.Api.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Atualizar uma anamnese existente por ID
+        /// </summary>
+        /// <param name="anamnesisId"></param>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// Somente psicólogos podem atualizar anamneses. Pacientes e administradores não têm permissão para atualizar anamneses.
+        /// </remarks>
         [HttpPatch("{anamnesisId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -52,7 +77,14 @@ namespace Mind_Manager.src.Api.Controllers
                 return NotFound();
             return Ok("Anamnesis updated successfully.");
         }
-
+        /// <summary>
+        /// Excluir uma anamnese por ID
+        /// </summary>
+        /// <param name="anamnesisId"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// Somente psicólogos podem excluir anamneses. Pacientes e administradores não têm permissão para excluir anamneses.
+        /// </remarks>
         [HttpDelete("{anamnesisId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

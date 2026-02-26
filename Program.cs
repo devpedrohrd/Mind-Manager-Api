@@ -49,6 +49,19 @@ builder.Services.AddSwaggerGen(c =>
             },
             new List<string>()
         }    });
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "Mind Manager API",
+        Description = "API para gerenciamento de consultas, pacientes e psicólogos.",
+        Contact = new OpenApiContact
+        {
+            Name = "Equipe Mind Manager",
+        }
+    });
+
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -20,6 +20,14 @@ public class UserControllers : ControllerBase
         _userLoggedHandller = userLoggedHandller;
     }
 
+    /// <summary>
+    /// Buscar usuários com filtros e paginação
+    /// </summary>
+    /// <param name="searchDto">Filtros para busca de usuários</param>
+    /// <returns>Retorna lista de usuários encontrados</returns>
+    /// <remarks>
+    /// Administradores podem buscar todos os usuários. Psicólogos podem buscar pacientes relacionados a eles e administradores. Pacientes só podem buscar a si mesmos.
+    /// </remarks>
     [HttpGet()]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -42,6 +50,14 @@ public class UserControllers : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Buscar usuário por ID
+    /// </summary>
+    /// <param name="id">ID do usuário a ser buscado</param>
+    /// <returns>Retorna o usuário encontrado ou erro</returns>
+    /// <remarks>
+    /// Administradores podem buscar qualquer usuário. Psicólogos podem buscar pacientes relacionados a eles e administradores. Pacientes só podem buscar a si mesmos.
+    /// </remarks>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -68,6 +84,15 @@ public class UserControllers : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Atualizar dados de um usuário
+    /// </summary>
+    /// <param name="id">ID do usuário a ser atualizado</param>
+    /// <param name="updateUserDto">Dados a serem atualizados</param>
+    /// <returns>Retorna o usuário atualizado ou erro</returns>
+    /// <remarks>
+    /// Administradores podem atualizar qualquer usuário. Psicólogos podem atualizar pacientes relacionados a eles e administradores. Pacientes só podem atualizar a si mesmos.
+    /// </remarks>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -95,6 +120,14 @@ public class UserControllers : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Excluir um usuário por ID
+    /// </summary>
+    /// <param name="id">ID do usuário a ser excluído</param>
+    /// <returns>Retorna status de sucesso ou erro</returns>
+    /// <remarks>
+    /// Administradores podem excluir qualquer usuário. Psicólogos podem excluir pacientes relacionados a eles e administradores. Pacientes só podem excluir a si mesmos.
+    /// </remarks>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
