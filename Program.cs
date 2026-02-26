@@ -136,6 +136,7 @@ builder.Services.AddScoped<IAppointment, AppointmentRepository>();
 builder.Services.AddScoped<IPsychologist, PsychologistRepository>();
 builder.Services.AddScoped<IPatient, PatientRepository>();
 builder.Services.AddScoped<ISession, SessionRepository>();
+builder.Services.AddScoped<IAnamnesis, AnamnesisRepository>();
 builder.Services.AddScoped<IUserValidator, UserValidator>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
@@ -146,6 +147,7 @@ builder.Services.AddScoped<IPsychologistService, PsychologistService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IAnamneseService, AnamneseService>();
 
 builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.NotFoundExceptionHandler>();
 builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.BusinessExceptionHandler>();
