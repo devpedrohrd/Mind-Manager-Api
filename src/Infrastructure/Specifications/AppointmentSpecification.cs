@@ -22,9 +22,19 @@ public class AppointmentSpecification
         if(appointmentFilters.ActivityType.HasValue)
             query = query.Where(p => p.ActivityType == appointmentFilters.ActivityType.Value);
         if(appointmentFilters.StartDate.HasValue)
-            query = query.Where(p => p.AppointmentDate.Date >= appointmentFilters.StartDate.Value.Date);
+        {
+            var startDate = appointmentFilters.StartDate.Value.Kind == DateTimeKind.Utc
+                ? appointmentFilters.StartDate.Value
+                : DateTime.SpecifyKind(appointmentFilters.StartDate.Value, DateTimeKind.Utc);
+            query = query.Where(p => p.AppointmentDate >= startDate);
+        }
         if(appointmentFilters.EndDate.HasValue)
-            query = query.Where(p => p.AppointmentDate.Date <= appointmentFilters.EndDate.Value.Date);
+        {
+            var endDate = appointmentFilters.EndDate.Value.Kind == DateTimeKind.Utc
+                ? appointmentFilters.EndDate.Value
+                : DateTime.SpecifyKind(appointmentFilters.EndDate.Value, DateTimeKind.Utc);
+            query = query.Where(p => p.AppointmentDate <= endDate);
+        }
 
         return query;
     }

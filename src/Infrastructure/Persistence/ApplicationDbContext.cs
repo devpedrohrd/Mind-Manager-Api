@@ -15,6 +15,39 @@ public class ApplicationDbContext : DbContext
     public DbSet<Anamnesis> Anamneses { get; set; } = null!;
     public DbSet<EmailSchedule> EmailSchedules { get; set; } = null!;
 
+    public override int SaveChanges()
+    {
+        NormalizeDateTimesToUtc();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        NormalizeDateTimesToUtc();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Converte todas as propriedades DateTime com Kind=Unspecified para Kind=Utc
+    /// antes de salvar no PostgreSQL (Npgsql exige Kind=Utc para timestamp with time zone).
+    /// </summary>
+    private void NormalizeDateTimesToUtc()
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
+
+        foreach (var entry in entries)
+        {
+            foreach (var property in entry.Properties)
+            {
+                if (property.CurrentValue is DateTime dt && dt.Kind == DateTimeKind.Unspecified)
+                {
+                    property.CurrentValue = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                }
+            }
+        }
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

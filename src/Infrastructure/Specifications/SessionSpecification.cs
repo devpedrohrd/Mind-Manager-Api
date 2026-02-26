@@ -15,9 +15,19 @@ public class SessionSpecification
         if(filters.AppointmentId.HasValue)
             query = query.Where(p => p.AppointmentId == filters.AppointmentId.Value);
         if(filters.StartDate.HasValue)
-            query = query.Where(p => p.SessionDate.Date >= filters.StartDate.Value.Date);
+        {
+            var startDate = filters.StartDate.Value.Kind == DateTimeKind.Utc
+                ? filters.StartDate.Value
+                : DateTime.SpecifyKind(filters.StartDate.Value, DateTimeKind.Utc);
+            query = query.Where(p => p.SessionDate >= startDate);
+        }
         if(filters.EndDate.HasValue)
-            query = query.Where(p => p.SessionDate.Date <= filters.EndDate.Value.Date);
+        {
+            var endDate = filters.EndDate.Value.Kind == DateTimeKind.Utc
+                ? filters.EndDate.Value
+                : DateTime.SpecifyKind(filters.EndDate.Value, DateTimeKind.Utc);
+            query = query.Where(p => p.SessionDate <= endDate);
+        }
 
         return query;
     }
