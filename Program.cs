@@ -207,17 +207,26 @@ app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
-
-// Swagger (documentação interativa)
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsProduction())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mind Manager API v1");
-        c.RoutePrefix = "swagger"; // Acesso em http://localhost:5000/swagger
-    });
+    app.UseHttpsRedirection();
 }
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.MapGet("/", () => "MindManager API is running 🚀");
+
+// // Swagger (documentação interativa)
+// if (app.Environment.IsDevelopment())
+// {
+//     app.UseSwagger();
+//     app.UseSwaggerUI(c =>
+//     {
+//         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mind Manager API v1");
+//         c.RoutePrefix = "swagger"; // Acesso em http://localhost:5000/swagger
+//     });
+// }
 
 // HTTPS redirect (desabilitado em Development para evitar problemas com Swagger)
 if (!app.Environment.IsDevelopment())
