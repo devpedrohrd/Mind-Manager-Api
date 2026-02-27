@@ -14,6 +14,7 @@ using Mind_Manager.Application.Authorization;
 using Mind_Manager.src.Domain.Interfaces;
 using Mind_Manager.src.Infrastructure.Repository;
 using ISession = Mind_Manager.src.Domain.Interfaces.ISession;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
+});
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -196,6 +203,7 @@ builder.Services.AddCors(options =>
 // CONSTRUIR APP
 // ========================================
 var app = builder.Build();
+app.UseForwardedHeaders();
 
 // ========================================
 // MIDDLEWARE PIPELINE
@@ -207,10 +215,10 @@ app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
-if (!app.Environment.IsProduction())
-{
-    app.UseHttpsRedirection();
-}
+// if (!app.Environment.IsProduction())
+// {
+//     app.UseHttpsRedirection();
+// }
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -228,11 +236,11 @@ app.MapGet("/", () => "MindManager API is running 🚀");
 //     });
 // }
 
-// HTTPS redirect (desabilitado em Development para evitar problemas com Swagger)
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+// // HTTPS redirect (desabilitado em Development para evitar problemas com Swagger)
+// if (!app.Environment.IsDevelopment())
+// {
+//     app.UseHttpsRedirection();
+// }
 
 // CORS
 app.UseCors("AllowAll");
@@ -242,6 +250,7 @@ app.UseRouting();
 
 // Autorização
 app.UseAuthorization();
+app.UseAuthentication();
 
 // Mapear controllers
 app.MapControllers();
