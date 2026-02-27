@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Entity Framework Core para PostgreSQL -->
+    <PackageReference Include="DotNetEnv" Version="3.1.1" />
     <PackageReference Include="MailKit" Version="4.15.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />

@@ -16,7 +16,18 @@ using Mind_Manager.src.Infrastructure.Repository;
 using ISession = Mind_Manager.src.Domain.Interfaces.ISession;
 using Microsoft.AspNetCore.HttpOverrides;
 
+// Carrega variáveis do arquivo .env (desenvolvimento local)
+var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+if (File.Exists(envPath))
+{
+    DotNetEnv.Env.Load();
+    Console.WriteLine("[ENV] Variáveis carregadas do arquivo .env");
+}
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Variáveis de ambiente sobrescrevem appsettings.json
+builder.Configuration.AddEnvironmentVariables();
 
 // ========================================
 // CONFIGURAÇÃO 1: SERVICES (Injeção de Dependência)
