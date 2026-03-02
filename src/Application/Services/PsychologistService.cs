@@ -1,4 +1,3 @@
-using Mind_Manager.Application.Authorization;
 using Mind_Manager.Domain.Exceptions;
 using Mind_Manager.Domain.Interfaces;
 using Mind_Manager.src.Domain.DTO;
@@ -14,14 +13,9 @@ public interface IPsychologistService
     Task<PsychologistResponse?> GetByIdAsync(Guid id);
 }
 
-public class PsychologistService : IPsychologistService
+public class PsychologistService(IUnitOfWork unitOfWork) : IPsychologistService
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public PsychologistService(IUnitOfWork unitOfWork, IAuthorizationService authorizationService)
-    {
-        _unitOfWork = unitOfWork;
-    }
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<PsychologistResponse> CreateAsync(CreatePsychologistCommand createDto)
     {
@@ -50,11 +44,18 @@ public class PsychologistService : IPsychologistService
             Specialty = createDto.Specialty,
         };
 
-        await _unitOfWork.Users.UpdateAsync(user);
-        await _unitOfWork.SaveChangesAsync();
-
-        await _unitOfWork.Psychologists.CreateAsync(psychologist);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            await _unitOfWork.Users.UpdateAsync(user);
+            await _unitOfWork.Psychologists.CreateAsync(psychologist);
+            await _unitOfWork.CommitTransactionAsync();
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
 
         return new PsychologistResponse(
             Id: psychologist.Id,

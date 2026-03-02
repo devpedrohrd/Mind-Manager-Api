@@ -1,5 +1,4 @@
 using System;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mind_Manager.Infrastructure.Persistence;
 using Mind_Manager.src.Domain.DTO;
@@ -13,7 +12,7 @@ public class AppointmentRepository(ApplicationDbContext context) : IAppointment
 {
     private readonly ApplicationDbContext _context = context;
 
-    public async Task<ActionResult<Appointment>> CreateAppointmentAsync(Appointment createAppointmentDto)
+    public async Task<Appointment> CreateAppointmentAsync(Appointment createAppointmentDto)
     {
         await _context.Appointments.AddAsync(createAppointmentDto);
         return createAppointmentDto;
@@ -64,16 +63,14 @@ public class AppointmentRepository(ApplicationDbContext context) : IAppointment
         return response;
     }
 
-    public async Task<ActionResult<IEnumerable<Appointment>>> GetAppointmentsByPatientIdAsync(Guid patientId)
+    public async Task<IEnumerable<Appointment>> GetAppointmentsByPatientIdAsync(Guid patientId)
     {
-        var appointments = await _context.Appointments.Where(a => a.PatientId == patientId).ToListAsync();
-        return appointments;
+        return await _context.Appointments.Where(a => a.PatientId == patientId).ToListAsync();
     }
 
-    public async Task<ActionResult<IEnumerable<Appointment>>> GetAppointmentsByPsychologistIdAsync(Guid psychologistId)
+    public async Task<IEnumerable<Appointment>> GetAppointmentsByPsychologistIdAsync(Guid psychologistId)
     {
-        var appointments = await _context.Appointments.Where(a => a.PsychologistId == psychologistId).ToListAsync();
-        return appointments;
+        return await _context.Appointments.Where(a => a.PsychologistId == psychologistId).ToListAsync();
     }
 
     public async Task<AppointmentsPendingsResponse> GetPendingAppointmentsForPsychologistAsync(DateTime? startDate, DateTime? endDate, Guid userIdRequesting)

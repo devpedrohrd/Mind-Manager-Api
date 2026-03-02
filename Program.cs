@@ -34,9 +34,14 @@ builder.Configuration.AddEnvironmentVariables();
 // ========================================
 
 // Controllers e API
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
+    });
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders =
@@ -125,13 +130,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        options.JsonSerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
-    });
-
 builder.Services.AddAuthorizationBuilder()
      .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"))
      .AddPolicy("PsychologistOrAdmin", policy => policy.RequireRole("Admin", "Psychologist"))
@@ -188,14 +186,11 @@ builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IEx
 builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.BusinessExceptionHandler>();
 builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.ValidationExceptionHandler>();
 builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.ForbiddenExceptionHandler>();
+builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.UnauthorizedAccessExceptionHandler>();
+builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.ArgumentExceptionHandler>();
 builder.Services.AddSingleton<Mind_Manager.Api.Middlewares.ExceptionHandlers.IExceptionHandler, Mind_Manager.Api.Middlewares.ExceptionHandlers.GenericExceptionHandler>();
 builder.Services.AddSingleton<IUserLoggedHandller, UserLoggedHandller>();
 
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
 // Logging
 builder.Services.AddLogging(config =>
 {
@@ -227,35 +222,11 @@ app.UseForwardedHeaders();
 
 // Middleware de tratamento de exceções global
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-app.UseAuthentication();
-app.UseAuthorization();
-
-// if (!app.Environment.IsProduction())
-// {
-//     app.UseHttpsRedirection();
-// }
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.MapGet("/", () => "MindManager API is running 🚀");
-
-// // Swagger (documentação interativa)
-// if (app.Environment.IsDevelopment())
-// {
-//     app.UseSwagger();
-//     app.UseSwaggerUI(c =>
-//     {
-//         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mind Manager API v1");
-//         c.RoutePrefix = "swagger"; // Acesso em http://localhost:5000/swagger
-//     });
-// }
-
-// // HTTPS redirect (desabilitado em Development para evitar problemas com Swagger)
-// if (!app.Environment.IsDevelopment())
-// {
-//     app.UseHttpsRedirection();
-// }
 
 // CORS
 app.UseCors("AllowAll");
@@ -263,9 +234,9 @@ app.UseCors("AllowAll");
 // Roteamento
 app.UseRouting();
 
-// Autorização
-app.UseAuthorization();
+// Autenticação e Autorização (DEVE ficar entre UseRouting e MapControllers)
 app.UseAuthentication();
+app.UseAuthorization();
 
 // Mapear controllers
 app.MapControllers();

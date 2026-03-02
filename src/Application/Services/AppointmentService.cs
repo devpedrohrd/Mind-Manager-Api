@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Mind_Manager.Domain.Exceptions;
 using Mind_Manager.Domain.Interfaces;
 using Mind_Manager.src.Application.Mappers;
@@ -19,13 +18,13 @@ public interface IAppointmentService
     Task<AppointmentsPendingsResponse> GetPendingAppointmentsForPsychologistAsync(DateTime? startDate, DateTime? endDate, Guid userIdRequesting);
 }
 
-public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork unitOfWork, IPatientService patientService, IPsychologistService psychologistService) : IAppointmentService
+public class AppointmentService(IAppointment appointmentRepository,IPatientService patientService, IPsychologistService psychologistService,IEmailSchedule emailSchedule, IUnitOfWork unitOfWork) : IAppointmentService
 {
     private readonly IAppointment _appointmentRepository = appointmentRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
     private readonly IPatientService _patientService = patientService;
     private readonly IPsychologistService _psychologistService = psychologistService;
+    private readonly IEmailSchedule _emailSchedule = emailSchedule;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<AppointmentResponse> CreateAppointmentAsync(CreateAppointmentCommand createAppointmentDto)
     {
@@ -39,7 +38,7 @@ public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork 
             if (createAppointmentDto.PatientId == null || createAppointmentDto.PatientId == Guid.Empty)
                 throw new ValidationException("O paciente é obrigatório para agendamentos do tipo Sessão.");
 
-            var patient = await _patientService.GetByUserIdAsync(createAppointmentDto.PatientId.Value)
+            var patient = await _patientService.GetByIdAsync(createAppointmentDto.PatientId.Value)
                 ?? throw new NotFoundException("Patient not found.");
             patientProfileId = patient.Id;
         }
@@ -64,7 +63,7 @@ public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork 
 
         var result = await _appointmentRepository.CreateAppointmentAsync(appointment);
         await _unitOfWork.SaveChangesAsync();
-        return AppointmentMapper.ToResponseDto(result.Value ?? throw new Exception("Error creating appointment."));
+        return AppointmentMapper.ToResponseDto(result);
     }
 
     public async Task<bool> DeleteAppointmentAsync(Guid appointmentId, Guid userIdRequesting, bool isPsychologist)
@@ -117,20 +116,13 @@ public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork 
     public async Task<AppointmentResponse[]> GetAppointmentsByPatientIdAsync(Guid patientId)
     {
         var result = await _appointmentRepository.GetAppointmentsByPatientIdAsync(patientId);
-
-        if (result.Value == null)
-            throw new NotFoundException("No appointments found for this patient.");
-
-        return [.. AppointmentMapper.ToResponseDtoList(result.Value)];
+        return [.. AppointmentMapper.ToResponseDtoList(result)];
     }
 
     public async Task<AppointmentResponse[]> GetAppointmentsByPsychologistIdAsync(Guid psychologistId)
     {
         var result = await _appointmentRepository.GetAppointmentsByPsychologistIdAsync(psychologistId);
-        if (result.Value == null)
-            throw new NotFoundException("No appointments found for this psychologist.");
-
-        return [.. AppointmentMapper.ToResponseDtoList(result.Value)];
+        return [.. AppointmentMapper.ToResponseDtoList(result)];
     }
 
     public async Task<bool> UpdateAppointmentAsync(Guid appointmentId, UpdateAppointmentCommand updateAppointmentDto, Guid userIdRequesting, bool isPsychologist)
@@ -160,7 +152,7 @@ public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork 
 
         if (dateChanged || wasCanceled)
         {
-            await _unitOfWork.EmailSchedules.DeleteByAppointmentIdAsync(appointmentId);
+            await _emailSchedule.DeleteByAppointmentIdAsync(appointmentId);
         }
 
         await _appointmentRepository.UpdateAppointmentAsync(appointmentResult);

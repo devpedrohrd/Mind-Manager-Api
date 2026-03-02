@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Mind_Manager.Domain.Entities;
 using Mind_Manager.Infrastructure.Persistence;
 using Mind_Manager.src.Domain.DTO;
@@ -18,14 +19,12 @@ public class PatientRepository(ApplicationDbContext context) : IPatient
 
     public async Task<PatientProfile?> GetPatientProfileByIdAsync(Guid patientId)
     {
-        var patientProfile = _context.PatientProfiles.FirstOrDefault(p => p.Id == patientId);
-        return await Task.FromResult(patientProfile);
+        return await _context.PatientProfiles.FirstOrDefaultAsync(p => p.Id == patientId);
     }
 
     public async Task<PatientProfile?> GetPatientProfileByUserIdAsync(Guid userId)
     {
-        var patientProfile = _context.PatientProfiles.FirstOrDefault(p => p.UserId == userId);
-        return await Task.FromResult(patientProfile);
+        return await _context.PatientProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
     }
 
     public async Task<SearchPatientsResponse?> GetPatientsByFilterAsync(SearchPatientsQuery filters)
@@ -34,13 +33,13 @@ public class PatientRepository(ApplicationDbContext context) : IPatient
         query = PatientSpecification.ApplyFilters(query, filters);
 
         // Calcular total antes da paginação
-        var total = query.Count();
+        var total = await query.CountAsync();
         var totalPages = (int)Math.Ceiling(total / (double)filters.Limit);
 
         // Aplicar paginação
         query = PatientSpecification.ApplyPagination(query, filters.Page, filters.Limit);
 
-        var patients = query.Select(p => p.ToDto()).ToList();
+        var patients = await query.Select(p => p.ToDto()).ToListAsync();
 
         return await Task.FromResult(new SearchPatientsResponse(
             Data: patients.AsReadOnly(),
@@ -53,15 +52,12 @@ public class PatientRepository(ApplicationDbContext context) : IPatient
 
     public async Task<IEnumerable<PatientProfile>> GetAllPatientProfilesAsync()
     {
-        var profiles = _context.PatientProfiles.ToList();
-        return await Task.FromResult(profiles);
+        return await _context.PatientProfiles.ToListAsync();
     }
 
     public async Task<PatientProfile> UpdatePatientProfileAsync(PatientProfile updatePatientProfileDto)
     {
         _context.PatientProfiles.Update(updatePatientProfileDto);
-        await _context.SaveChangesAsync();
-
-        return updatePatientProfileDto;
+        return await Task.FromResult(updatePatientProfileDto);
     }
 }

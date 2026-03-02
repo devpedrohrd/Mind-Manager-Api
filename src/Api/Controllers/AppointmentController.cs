@@ -2,9 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Mind_Manager.src.Application.Services;
 using Mind_Manager.src.Domain.DTO;
-using Mind_Manager.Domain.Exceptions;
-using System.ComponentModel;
-
 namespace Mind_Manager.Api.Controllers;
 
 [ApiController]
@@ -282,19 +279,8 @@ public class AppointmentController : ControllerBase
             throw new UnauthorizedAccessException("User ID or role not found.");
         }
 
-        try
-        {
-            var appointment = await _appointmentService.GetAppointmentByIdAsync(id, userId.Value, userRole);
-            _logger.LogInformation("Usuário {UserId} buscando agendamento {AppointmentId}", userId, id);
-            return Ok(appointment);
-        }
-        catch (NotFoundException)
-        {
-            return NotFound(new { message = $"Agendamento {id} não encontrado." });
-        }
-        catch (UnauthorizedException)
-        {
-            return Forbid("Você não tem permissão para acessar este agendamento.");
-        }
+        var appointment = await _appointmentService.GetAppointmentByIdAsync(id, userId.Value, userRole);
+        _logger.LogInformation("Usuário {UserId} buscando agendamento {AppointmentId}", userId, id);
+        return Ok(appointment);
     }
 }

@@ -14,7 +14,6 @@ public class SessionRepository(ApplicationDbContext context) : src.Domain.Interf
     public async Task<Session> CreateSessionAsync(Session createSessionDto)
     {
         await _context.Sessions.AddAsync(createSessionDto);
-        await _context.SaveChangesAsync();
         return createSessionDto;
     }
 
@@ -23,7 +22,6 @@ public class SessionRepository(ApplicationDbContext context) : src.Domain.Interf
         var session = await GetSessionByIdAsync(sessionId);
         if (session is null) return false;
         _context.Sessions.Remove(session);
-        await _context.SaveChangesAsync();
         return true;
     }
 
@@ -63,7 +61,6 @@ public class SessionRepository(ApplicationDbContext context) : src.Domain.Interf
     public async Task<bool> UpdateSessionAsync(Session updateSessionDto)
     {
         _context.Sessions.Update(updateSessionDto);
-        await _context.SaveChangesAsync();
-        return true;
+        return await Task.FromResult(true);
     }
 }

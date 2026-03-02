@@ -15,19 +15,15 @@ public interface IPatientService
     Task<SearchPatientsResponse?> GetByFilterAsync(SearchPatientsQuery filters, Guid? userId = null, string? userRole = null);
 }
 
-public class PatientService : IPatientService
+public class PatientService(IUnitOfWork unitOfWork) : IPatientService
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-    public PatientService(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
     public async Task<PatientProfileResponse> CreateAsync(CreatePatientProfileCommand createDto)
     {
         _ = await _unitOfWork.Users.GetByIdAsync(createDto.UserId) ?? throw new BusinessException("USER_NOT_FOUND");
 
-        var existingProfile = await _unitOfWork.Patients.GetPatientProfileByIdAsync(createDto.UserId);
+        var existingProfile = await _unitOfWork.Patients.GetPatientProfileByUserIdAsync(createDto.UserId);
         if (existingProfile != null) throw new BusinessException("USER_ALREADY_HAS_PROFILE");
 
         var birthDate = createDto.BirthDate.HasValue
@@ -95,7 +91,7 @@ public class PatientService : IPatientService
 
     public async Task<PatientProfileResponse?> GetByUserIdAsync(Guid userId)
     {
-        var patientProfile = await _unitOfWork.Patients.GetPatientProfileByIdAsync(userId);
+        var patientProfile = await _unitOfWork.Patients.GetPatientProfileByUserIdAsync(userId);
         return patientProfile?.ToDto();
     }
 

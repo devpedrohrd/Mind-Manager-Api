@@ -15,11 +15,11 @@ public class PsychologistRepository(ApplicationDbContext context) : IPsychologis
         return await Task.FromResult(createDto);
     }
 
-    public Task<bool> UpdateAsync(Guid userId, UpdatePsychologistCommand updateDto)
+    public async Task<bool> UpdateAsync(Guid userId, UpdatePsychologistCommand updateDto)
     {
-        var profileExists =  this.GetByIdAsync(userId).Result;
+        var profileExists = await this.GetByIdAsync(userId);
         if (profileExists is null)
-            return Task.FromResult(false);
+            return false;
         
         if (updateDto.Specialty != null)
             profileExists.Specialty = updateDto.Specialty;
@@ -27,7 +27,7 @@ public class PsychologistRepository(ApplicationDbContext context) : IPsychologis
         if(updateDto.Crp != null)
         profileExists.Crp = updateDto.Crp;
 
-        return Task.FromResult(true);
+        return true;
     }
 
     public async Task<PsychologistProfile?> GetByUserIdAsync(Guid userId)

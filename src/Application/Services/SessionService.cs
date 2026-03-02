@@ -1,5 +1,6 @@
 using Mind_Manager.Domain.Entities;
 using Mind_Manager.Domain.Exceptions;
+using Mind_Manager.Domain.Interfaces;
 using Mind_Manager.src.Domain.DTO;
 using Mind_Manager.src.Domain.Interfaces;
 using ISession = Mind_Manager.src.Domain.Interfaces.ISession;
@@ -52,8 +53,6 @@ public class SessionService(ISession sessionRepository, IPsychologistService psy
         await ValidateSessionAccessAsync(session, userIdRequesting, isPsychologist);
 
         var result = await _sessionRepository.DeleteSessionAsync(sessionId);
-        if (result)
-            return true;
         return result;
     }
 

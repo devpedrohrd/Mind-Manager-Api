@@ -12,7 +12,6 @@ public class AnamnesisRepository (ApplicationDbContext _context) : IAnamnesis
     public async Task<Anamnesis> CreateAnamnesisAsync(Anamnesis anamnesis)
     {
         await _context.Anamneses.AddAsync(anamnesis);
-        await _context.SaveChangesAsync();
         return anamnesis;
     }
 
@@ -21,7 +20,6 @@ public class AnamnesisRepository (ApplicationDbContext _context) : IAnamnesis
         var anamnesis = await GetAnamnesisByIdAsync(anamnesisId);
         if (anamnesis is null) return false;
         _context.Anamneses.Remove(anamnesis);
-        await _context.SaveChangesAsync();
         return true;
     }
 
@@ -37,10 +35,9 @@ public class AnamnesisRepository (ApplicationDbContext _context) : IAnamnesis
             .ToListAsync();
     }
 
-    public async Task<bool> UpdateAnamnesisAsync(Guid anamnesisId, Anamnesis updatedAnamnesis)
+    public Task<bool> UpdateAnamnesisAsync(Guid anamnesisId, Anamnesis updatedAnamnesis)
     {
         _context.Anamneses.Update(updatedAnamnesis);
-        await _context.SaveChangesAsync();
-        return true;
+        return Task.FromResult(true);
     }
 }

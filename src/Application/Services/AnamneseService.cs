@@ -29,28 +29,33 @@ public class AnamneseService(IAnamnesis anamnesisRepository, IUnitOfWork unitOfW
 
         var anamnesis = new Anamnesis(
             command.PatientId,
-            command.Accompaniment,
-            command.Adolescence,
             command.FamilyHistory,
+            command.Infancy,
+            command.Adolescence,
             command.Illnesses,
-            command.Infancy)
+            command.Accompaniment
+        )
         {
             Id = Guid.NewGuid(),
             CreatedAt = DateTime.UtcNow
         };
 
         var createdAnamnesis = await _anamnesisRepository.CreateAnamnesisAsync(anamnesis);
+        await _unitOfWork.SaveChangesAsync();
         return createdAnamnesis.ToResponseDto();
     }
 
-    public Task<bool> DeleteAnamnesisAsync(Guid anamnesisId, bool isPsychologist)
+    public async Task<bool> DeleteAnamnesisAsync(Guid anamnesisId, bool isPsychologist)
     {
         if (!isPsychologist)
         {
             throw new UnauthorizedAccessException("Psychologist profile not found.");
         }
 
-        return _anamnesisRepository.DeleteAnamnesisAsync(anamnesisId);
+        var result = await _anamnesisRepository.DeleteAnamnesisAsync(anamnesisId);
+        if (result)
+            await _unitOfWork.SaveChangesAsync();
+        return result;
     }
 
     public async Task<AnamnesisResponse?> GetAnamnesisByIdAsync(Guid anamnesisId, bool isPsychologist)
@@ -79,6 +84,9 @@ public class AnamneseService(IAnamnesis anamnesisRepository, IUnitOfWork unitOfW
             command.Adolescence ?? existingAnamnesis.Adolescence,
             command.Illnesses ?? existingAnamnesis.Illnesses,
             command.Accompaniment ?? existingAnamnesis.Accompaniment);
+
+        await _anamnesisRepository.UpdateAnamnesisAsync(existingAnamnesis.Id,existingAnamnesis);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
     }
