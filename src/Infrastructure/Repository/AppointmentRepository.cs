@@ -76,9 +76,46 @@ public class AppointmentRepository(ApplicationDbContext context) : IAppointment
         return appointments;
     }
 
+    public async Task<AppointmentsPendingsResponse> GetPendingAppointmentsForPsychologistAsync(DateTime? startDate, DateTime? endDate, Guid userIdRequesting)
+    {
+        var tomorrow = DateTime.Today.AddDays(1);
+        
+        var pendingEmails = await _context.Appointments
+            .Include(a => a.Patient)
+            .Include(a => a.EmailSchedules)
+            .Where(a => a.AppointmentDate <= DateTime.Now &&
+                a.AppointmentDate < tomorrow &&
+                (a.Status == Status.Pending || a.Status == Status.Confirmed))
+            .ToListAsync();
+
+        var response = new AppointmentsPendingsResponse(
+            Data: [.. pendingEmails.Select(AppointmentMapper.ToResponseDto)]
+        );
+        return response;
+    }
+
     public Task<bool> UpdateAppointmentAsync(Appointment updateAppointmentDto)
     {
         _context.Appointments.Update(updateAppointmentDto);
         return Task.FromResult(true);
+    }
+
+    public async Task<List<Appointment>> GetTodayPendingAppointmentsWithDetailsAsync()
+    {
+        var todayUtc = DateTime.UtcNow.Date;
+        var tomorrowUtc = todayUtc.AddDays(1);
+
+        return await _context.Appointments
+            .Include(a => a.Patient!)
+                .ThenInclude(p => p.User)
+            .Include(a => a.Psychologist)
+                .ThenInclude(p => p.User)
+            .Include(a => a.EmailSchedules)
+            .Where(a => a.AppointmentDate >= todayUtc
+                && a.AppointmentDate < tomorrowUtc
+                && (a.Status == Status.Pending || a.Status == Status.Confirmed)
+                && a.Patient != null
+                && a.Patient.User.IsActive)
+            .ToListAsync();
     }
 }

@@ -13,4 +13,6 @@ public interface IAppointment
     Task<ActionResult<IEnumerable<Appointment>>> GetAppointmentsByPsychologistIdAsync(Guid psychologistId);
     Task<ActionResult<IEnumerable<Appointment>>> GetAppointmentsByPatientIdAsync(Guid patientId);
     Task<SearchAppointmentsResponse> GetAppointmentsByFilterAsync(SearchAppointmentsQuery filters);
+    Task<AppointmentsPendingsResponse> GetPendingAppointmentsForPsychologistAsync(DateTime? startDate, DateTime? endDate, Guid userIdRequesting);
+    Task<List<Appointment>> GetTodayPendingAppointmentsWithDetailsAsync();
 }

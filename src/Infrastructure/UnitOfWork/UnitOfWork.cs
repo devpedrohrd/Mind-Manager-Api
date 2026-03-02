@@ -18,6 +18,7 @@ public class UnitOfWork(ApplicationDbContext context) : IUnitOfWork
     private IAppointment? _appointmentRepository;
     private src.Domain.Interfaces.ISession? _sessionRepository;
     private IAnamnesis? _anamnesisRepository;
+    private IEmailSchedule? _emailScheduleRepository;
 
     public IUserRepository Users => _userRepository ??= new UserRepository(_context);
 
@@ -29,6 +30,7 @@ public class UnitOfWork(ApplicationDbContext context) : IUnitOfWork
 
     public src.Domain.Interfaces.ISession Sessions => _sessionRepository ??= new SessionRepository(_context);
     public IAnamnesis Anamnesis => _anamnesisRepository ??= new AnamnesisRepository(_context);
+    public IEmailSchedule EmailSchedules => _emailScheduleRepository ??= new EmailScheduleRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
