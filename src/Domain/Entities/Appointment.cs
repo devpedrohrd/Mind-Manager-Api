@@ -6,7 +6,7 @@ public class Appointment
 {
     public Guid Id { get; set; }
     public Guid PsychologistId { get; set; }
-    public Guid PatientId { get; set; }
+    public Guid? PatientId { get; set; }
     public DateTime AppointmentDate { get; set; }
     public Status Status { get; set; } = Status.Pending;
     public TypeAppointment? Type { get; set; }
@@ -23,7 +23,7 @@ public class Appointment
 
     public Appointment(
         Guid psychologistId,
-        Guid patientId,
+        Guid? patientId,
         DateTime appointmentDate,
         Status status = Status.Pending,
         TypeAppointment? type = null,
@@ -34,12 +34,13 @@ public class Appointment
     {
         if (psychologistId == Guid.Empty)
             throw new ValidationException("O ID do psicólogo não pode ser vazio.");
-        if(patientId == Guid.Empty)
-            throw new ValidationException("O ID do paciente não pode ser vazio.");
+
+        if (type == TypeAppointment.Session && (patientId == null || patientId == Guid.Empty))
+            throw new ValidationException("O ID do paciente é obrigatório para agendamentos do tipo Sessão.");
 
         Id = Guid.NewGuid();
         PsychologistId = psychologistId;
-        PatientId = patientId;
+        PatientId = type == TypeAppointment.Session ? patientId : null;
         AppointmentDate = appointmentDate;
         Status = status;
         Type = type;
@@ -68,95 +69,5 @@ public class Appointment
         Objective = objective ?? Objective;
     }
 
-    public void UpdateStatus(Status newStatus)
-    {
-        if (Status == Status.Canceled)
-            throw new BusinessException("Não é possível alterar o status de um agendamento cancelado.");
 
-        Status = newStatus;
-    }
-
-    public void AssignPatient(Guid patientId)
-    {
-        if (patientId == Guid.Empty)
-            throw new ValidationException("O ID do paciente não pode ser vazio.");
-
-        if (Status == Status.Canceled)
-            throw new BusinessException("Não é possível atribuir um paciente a um agendamento cancelado.");
-
-        PatientId = patientId;
-    }
-
-    public void Cancel()
-    {
-        if (Status == Status.Canceled)
-            throw new BusinessException("O agendamento já está cancelado.");
-
-        Status = Status.Canceled;
-    }
-
-    public void Reschedule(DateTime newDate)
-    {
-        if (Status == Status.Canceled)
-            throw new BusinessException("Não é possível reagendar um agendamento cancelado.");
-
-        AppointmentDate = newDate;
-    }
-
-    public void AddObservation(string observation)
-    {
-        if (string.IsNullOrWhiteSpace(observation))
-            throw new ValidationException("A observação não pode ser vazia.");
-
-        Observation = observation;
-    }
-
-    public void AddObjective(string objective)
-    {
-        if (string.IsNullOrWhiteSpace(objective))
-            throw new ValidationException("O objetivo não pode ser vazio.");
-
-        Objective = objective;
-    }
-
-
-    public void UpdateType(TypeAppointment type)
-    {
-        if (Status == Status.Canceled)
-            throw new BusinessException("Não é possível alterar o tipo de um agendamento cancelado.");
-
-        Type = type;
-    }
-
-    public void UpdateActivityType(ActivityType activityType)
-    {
-        if (Status == Status.Canceled)
-            throw new BusinessException("Não é possível alterar o tipo de atividade de um agendamento cancelado.");
-
-        ActivityType = activityType;
-    }
-
-    public void RemovePatient()
-    {
-        if (Status == Status.Canceled)
-            throw new BusinessException("Não é possível remover o paciente de um agendamento cancelado.");
-
-        PatientId = Guid.Empty;
-    }
-
-    public void RemoveObservation()
-    {
-        if (Status == Status.Canceled)
-            throw new BusinessException("Não é possível remover a observação de um agendamento cancelado.");
-
-        Observation = null;
-    }
-
-    public void RemoveObjective()
-    {
-        if (Status == Status.Canceled)
-            throw new BusinessException("Não é possível remover o objetivo de um agendamento cancelado.");
-
-        Objective = null;
-    }
 }

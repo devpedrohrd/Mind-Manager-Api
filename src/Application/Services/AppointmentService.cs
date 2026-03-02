@@ -16,6 +16,7 @@ public interface IAppointmentService
     Task<AppointmentResponse[]> GetAppointmentsByPatientIdAsync(Guid patientId);
     Task<AppointmentResponse[]> GetAppointmentsByPsychologistIdAsync(Guid psychologistId);
     Task<bool> UpdateAppointmentAsync(Guid appointmentId, UpdateAppointmentCommand updateAppointmentDto, Guid userIdRequesting, bool isPsychologist);
+    Task<AppointmentsPendingsResponse> GetPendingAppointmentsForPsychologistAsync(DateTime? startDate, DateTime? endDate, Guid userIdRequesting);
 }
 
 public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork unitOfWork, IPatientService patientService, IPsychologistService psychologistService) : IAppointmentService
@@ -30,12 +31,28 @@ public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork 
     {
         var psychologist = await _psychologistService.GetByUserIdAsync(createAppointmentDto.PsychologistId ?? Guid.Empty)
             ?? throw new NotFoundException("Psychologist not found.");
-        var patient = await _patientService.GetByUserIdAsync(createAppointmentDto.PatientId)
-            ?? throw new NotFoundException("Patient not found.");
+
+        Guid? patientProfileId = null;
+
+        if (createAppointmentDto.Type == TypeAppointment.Session)
+        {
+            if (createAppointmentDto.PatientId == null || createAppointmentDto.PatientId == Guid.Empty)
+                throw new ValidationException("O paciente é obrigatório para agendamentos do tipo Sessão.");
+
+            var patient = await _patientService.GetByUserIdAsync(createAppointmentDto.PatientId.Value)
+                ?? throw new NotFoundException("Patient not found.");
+            patientProfileId = patient.Id;
+        }
+        else if (createAppointmentDto.PatientId != null && createAppointmentDto.PatientId != Guid.Empty)
+        {
+            // Para outros tipos, paciente é opcional
+            var patient = await _patientService.GetByUserIdAsync(createAppointmentDto.PatientId.Value);
+            patientProfileId = patient?.Id;
+        }
 
         var appointment = new Appointment(
-            psychologistId: psychologist.Id, // Usar o PsychologistProfile.Id, não o UserId
-            patientId: patient.Id, // Usar o PatientProfile.Id, não o UserId
+            psychologistId: psychologist.Id,
+            patientId: patientProfileId,
             appointmentDate: createAppointmentDto.AppointmentDate,
             status: createAppointmentDto.Status,
             type: createAppointmentDto.Type,
@@ -118,10 +135,7 @@ public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork 
 
     public async Task<bool> UpdateAppointmentAsync(Guid appointmentId, UpdateAppointmentCommand updateAppointmentDto, Guid userIdRequesting, bool isPsychologist)
     {
-        var appointmentResult = await _appointmentRepository.GetAppointmentByIdAsync(appointmentId);
-        if (appointmentResult == null)
-            throw new NotFoundException("Appointment not found.");
-
+        var appointmentResult = await _appointmentRepository.GetAppointmentByIdAsync(appointmentId) ?? throw new NotFoundException("Appointment not found.");
         var existingAppointment = appointmentResult;
 
         var psychologistProfile = await _psychologistService.GetByUserIdAsync(userIdRequesting);
@@ -138,6 +152,16 @@ public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork 
             updateAppointmentDto.Observation ?? existingAppointment.Observation,
             updateAppointmentDto.Objective ?? existingAppointment.Objective
         );
+
+        // Se a data foi alterada ou o status mudou para Cancelado, invalida emails agendados
+        var dateChanged = updateAppointmentDto.AppointmentDate.HasValue 
+            && updateAppointmentDto.AppointmentDate.Value != existingAppointment.AppointmentDate;
+        var wasCanceled = updateAppointmentDto.Status == Status.Canceled;
+
+        if (dateChanged || wasCanceled)
+        {
+            await _unitOfWork.EmailSchedules.DeleteByAppointmentIdAsync(appointmentId);
+        }
 
         await _appointmentRepository.UpdateAppointmentAsync(appointmentResult);
         await _unitOfWork.SaveChangesAsync();
@@ -157,5 +181,10 @@ public class AppointmentService(IAppointment appointmentRepository, IUnitOfWork 
         
         var searchQuery = filters with { Filters = currentFilters };
         return await _appointmentRepository.GetAppointmentsByFilterAsync(searchQuery);
+    }
+
+    public async Task<AppointmentsPendingsResponse> GetPendingAppointmentsForPsychologistAsync(DateTime? startDate, DateTime? endDate, Guid userIdRequesting)
+    {
+        return await _appointmentRepository.GetPendingAppointmentsForPsychologistAsync(startDate, endDate, userIdRequesting);
     }
 }

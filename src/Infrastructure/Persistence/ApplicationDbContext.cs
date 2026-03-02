@@ -216,6 +216,8 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.PsychologistId).IsRequired();
 
+            entity.Property(e => e.PatientId).IsRequired(false);
+
             entity.Property(e => e.AppointmentDate).IsRequired();
 
             entity.Property(e => e.Status)

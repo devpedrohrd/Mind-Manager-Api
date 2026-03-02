@@ -5,7 +5,7 @@ namespace Mind_Manager.src.Domain.DTO;
 
 public record CreateAppointmentCommand(
     Guid? PsychologistId,
-    Guid PatientId,
+    Guid? PatientId = null,
     Status Status = Status.Pending,
     TypeAppointment? Type = null,
     DateTime AppointmentDate = default,
@@ -67,4 +67,8 @@ public record SearchAppointmentsResponse(
     int Page,
     int Limit,
     int TotalPages
+);
+
+public record AppointmentsPendingsResponse(
+    IReadOnlyCollection<AppointmentResponse> Data
 );

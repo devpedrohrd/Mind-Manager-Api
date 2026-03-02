@@ -34,10 +34,13 @@ public class PsychologistService : IPsychologistService
         if (string.IsNullOrWhiteSpace(createDto.Specialty))
             throw new BusinessException("SPECIALTY_REQUIRED");
 
-        var user = await _unitOfWork.Psychologists.GetByUserIdAsync(createDto.UserId.Value);
+        var existingPsychologist = await _unitOfWork.Psychologists.GetByUserIdAsync(createDto.UserId.Value);
 
-        if (user != null)
+        if (existingPsychologist != null)
             throw new BusinessException("USER_ALREADY_HAS_PROFILE");
+
+        var user = await _unitOfWork.Users.GetByIdAsync(createDto.UserId.Value) ?? throw new BusinessException("USER_NOT_FOUND");
+        user.Role = UserRole.Psychologist;
 
         var psychologist = new PsychologistProfile
         {
@@ -46,6 +49,9 @@ public class PsychologistService : IPsychologistService
             Crp = createDto.Crp,
             Specialty = createDto.Specialty,
         };
+
+        await _unitOfWork.Users.UpdateAsync(user);
+        await _unitOfWork.SaveChangesAsync();
 
         await _unitOfWork.Psychologists.CreateAsync(psychologist);
         await _unitOfWork.SaveChangesAsync();
