@@ -146,13 +146,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, npgsqlOptions =>
     {
-        // Habilita retry automático em caso de falha de conexão
+        ApplicationDbContext.ConfigureEnums(npgsqlOptions);
         npgsqlOptions.EnableRetryOnFailure(
             maxRetryCount: 3,
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null);
-    })
-    .EnableServiceProviderCaching(false)); // Evita cache de service provider para threading
+    }).EnableServiceProviderCaching(false));
 
 
 // ========================================

@@ -14,4 +14,5 @@ public interface IAppointment
     Task<SearchAppointmentsResponse> GetAppointmentsByFilterAsync(SearchAppointmentsQuery filters);
     Task<AppointmentsPendingsResponse> GetPendingAppointmentsForPsychologistAsync(DateTime? startDate, DateTime? endDate, Guid userIdRequesting);
     Task<List<Appointment>> GetTodayPendingAppointmentsWithDetailsAsync();
+    Task<bool> HasConflictAsync(Guid psychologistId, DateTime start, DateTime end, Guid? excludeAppointmentId = null);
 }

@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Mind_Manager.Domain.Interfaces;
 using Mind_Manager.Infrastructure.Persistence;
 using Mind_Manager.src.Domain.Interfaces;
@@ -9,7 +8,6 @@ namespace Mind_Manager.Infrastructure.UnitOfWork;
 public class UnitOfWork(ApplicationDbContext context) : IUnitOfWork
 {
     private readonly ApplicationDbContext _context = context;
-    private IDbContextTransaction? _transaction;
     private IUserRepository? _userRepository;
 
     private IPsychologist? _psychologistRepository;
@@ -38,41 +36,6 @@ public class UnitOfWork(ApplicationDbContext context) : IUnitOfWork
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
-    {
-        _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-    }
-
-    public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await SaveChangesAsync(cancellationToken);
-            if (_transaction != null)
-                await _transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
-        finally
-        {
-            _transaction?.Dispose();
-            _transaction = null;
-        }
-    }
-
-    public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
-    {
-        if (_transaction != null)
-        {
-            await _transaction.RollbackAsync(cancellationToken);
-            _transaction.Dispose();
-            _transaction = null;
-        }
-    }
-
     public async Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken = default)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
@@ -95,7 +58,6 @@ public class UnitOfWork(ApplicationDbContext context) : IUnitOfWork
 
     public void Dispose()
     {
-        _transaction?.Dispose();
         _context.Dispose();
     }
 }

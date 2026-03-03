@@ -61,6 +61,13 @@ public class AppointmentService(IAppointment appointmentRepository,IPatientServi
             objective: createAppointmentDto.Objective
         );
 
+        // Detecção de conflito de horário (intervalo padrão: 1 hora)
+        var conflictStart = createAppointmentDto.AppointmentDate;
+        var conflictEnd = conflictStart.AddHours(1);
+        var hasConflict = await _appointmentRepository.HasConflictAsync(psychologist.Id, conflictStart, conflictEnd);
+        if (hasConflict)
+            throw new BusinessException("Já existe um agendamento neste horário para este psicólogo. Escolha outro horário.");
+
         var result = await _appointmentRepository.CreateAppointmentAsync(appointment);
         await _unitOfWork.SaveChangesAsync();
         return AppointmentMapper.ToResponseDto(result);
@@ -149,6 +156,17 @@ public class AppointmentService(IAppointment appointmentRepository,IPatientServi
             updateAppointmentDto.Observation,
             updateAppointmentDto.Objective
         );
+
+        // Detecção de conflito se a data foi alterada
+        if (updateAppointmentDto.AppointmentDate.HasValue)
+        {
+            var conflictStart = updateAppointmentDto.AppointmentDate.Value;
+            var conflictEnd = conflictStart.AddHours(1);
+            var hasConflict = await _appointmentRepository.HasConflictAsync(
+                existingAppointment.PsychologistId, conflictStart, conflictEnd, excludeAppointmentId: appointmentId);
+            if (hasConflict)
+                throw new BusinessException("Já existe um agendamento neste horário para este psicólogo. Escolha outro horário.");
+        }
 
         // Se a data foi alterada ou o status mudou para Cancelado, invalida emails agendados
         var dateChanged = updateAppointmentDto.AppointmentDate.HasValue 

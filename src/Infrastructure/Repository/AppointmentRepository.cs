@@ -115,4 +115,16 @@ public class AppointmentRepository(ApplicationDbContext context) : IAppointment
                 && a.Patient.User.IsActive)
             .ToListAsync();
     }
+
+    public async Task<bool> HasConflictAsync(Guid psychologistId, DateTime start, DateTime end, Guid? excludeAppointmentId = null)
+    {
+        return await _context.Appointments
+            .Where(a => a.PsychologistId == psychologistId
+                && a.Status != Status.Canceled
+                && a.Status != Status.NoShow
+                && a.AppointmentDate < end
+                && a.AppointmentDate >= start.AddHours(-1)) // intervalo de sobreposição (duração padrão 1h)
+            .Where(a => excludeAppointmentId == null || a.Id != excludeAppointmentId)
+            .AnyAsync();
+    }
 }

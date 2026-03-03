@@ -2,9 +2,32 @@ namespace Mind_Manager.Infrastructure.Persistence;
 
 using Microsoft.EntityFrameworkCore;
 using Mind_Manager.Domain.Entities;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
+using Npgsql.NameTranslation;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
+    /// <summary>
+    /// Configura os mapeamentos de enums nativos do PostgreSQL no NpgsqlDbContextOptionsBuilder.
+    /// Isso popula as EnumDefinitions usadas pelo EF Core para type mapping
+    /// E também faz o NpgsqlDataSourceManager criar o DataSource com MapEnum automaticamente.
+    /// </summary>
+    public static void ConfigureEnums(NpgsqlDbContextOptionsBuilder npgsqlOptions)
+    {
+        var nt = new NpgsqlNullNameTranslator();
+        npgsqlOptions.MapEnum<UserRole>(nameTranslator: nt);
+        npgsqlOptions.MapEnum<Gender>(nameTranslator: nt);
+        npgsqlOptions.MapEnum<CreatedBy>(nameTranslator: nt);
+        npgsqlOptions.MapEnum<PatientType>(nameTranslator: nt);
+        npgsqlOptions.MapEnum<Education>(nameTranslator: nt);
+        npgsqlOptions.MapEnum<Courses>(nameTranslator: nt);
+        npgsqlOptions.MapEnum<Status>(nameTranslator: nt);
+        npgsqlOptions.MapEnum<TypeAppointment>(nameTranslator: nt);
+        npgsqlOptions.MapEnum<ActivityType>(nameTranslator: nt);
+        npgsqlOptions.MapEnum<PsychologicalDisorder>(nameTranslator: nt);
+        npgsqlOptions.MapEnum<Difficulty>(nameTranslator: nt);
+    }
+
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<PsychologistProfile> PsychologistProfiles { get; set; } = null!;
     public DbSet<PatientProfile> PatientProfiles { get; set; } = null!;
@@ -50,6 +73,20 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.OnModelCreating(modelBuilder);
 
+        // Registrar tipos ENUM nativos do PostgreSQL (PascalCase = nomes C#)
+        var nt = new NpgsqlNullNameTranslator();
+        modelBuilder.HasPostgresEnum<UserRole>(nameTranslator: nt);
+        modelBuilder.HasPostgresEnum<Gender>(nameTranslator: nt);
+        modelBuilder.HasPostgresEnum<CreatedBy>(nameTranslator: nt);
+        modelBuilder.HasPostgresEnum<PatientType>(nameTranslator: nt);
+        modelBuilder.HasPostgresEnum<Education>(nameTranslator: nt);
+        modelBuilder.HasPostgresEnum<Courses>(nameTranslator: nt);
+        modelBuilder.HasPostgresEnum<Status>(nameTranslator: nt);
+        modelBuilder.HasPostgresEnum<TypeAppointment>(nameTranslator: nt);
+        modelBuilder.HasPostgresEnum<ActivityType>(nameTranslator: nt);
+        modelBuilder.HasPostgresEnum<PsychologicalDisorder>(nameTranslator: nt);
+        modelBuilder.HasPostgresEnum<Difficulty>(nameTranslator: nt);
+
         // --- USER ---
         modelBuilder.Entity<User>(entity =>
         {
@@ -76,6 +113,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasDefaultValue(true);
 
             entity.Property(e => e.Role)
+                .HasColumnType("UserRole")
                 .IsRequired();
 
             entity.Property(e => e.CreatedAt)
@@ -113,34 +151,36 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasMaxLength(50);
 
             entity.Property(e => e.Gender)
+                .HasColumnType("Gender")
                 .IsRequired();
 
             entity.Property(e => e.PatientType)
+                .HasColumnType("PatientType")
                 .IsRequired();
-
-            entity.Property(e => e.Education);
-
-            entity.Property(e => e.Course);
 
             entity.Property(e => e.CreatedBy)
+                .HasColumnType("CreatedBy")
                 .IsRequired();
 
-            // Arrays de enums (PostgreSQL) - convertendo para int[] para armazenamento eficiente
+            entity.Property(e => e.Education)
+                .HasColumnType("Education");
+
+            entity.Property(e => e.Course)
+                .HasColumnType("Courses");
+
+            // Arrays de enums (PostgreSQL) — Npgsql lida nativamente com enum[]
             entity.Property(e => e.Disorders)
-                .HasConversion(
-                    v => v.Select(d => (int)d).ToArray(),
-                    v => v.Select(i => (PsychologicalDisorder)i).ToList()
-                )
+                .HasColumnType("PsychologicalDisorder[]");
+            entity.Property(e => e.Disorders)
                 .Metadata.SetValueComparer(new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<PsychologicalDisorder>>(
                     (c1, c2) => c1!.SequenceEqual(c2!),
                     c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
                     c => c.ToList()));
 
+            // Arrays de enums (PostgreSQL) — Npgsql lida nativamente com enum[]
             entity.Property(e => e.Difficulties)
-                .HasConversion(
-                    v => v.Select(d => (int)d).ToArray(),
-                    v => v.Select(i => (Difficulty)i).ToList()
-                )
+                .HasColumnType("Difficulty[]");
+            entity.Property(e => e.Difficulties)
                 .Metadata.SetValueComparer(new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<Difficulty>>(
                     (c1, c2) => c1!.SequenceEqual(c2!),
                     c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
@@ -219,11 +259,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(e => e.AppointmentDate).IsRequired();
 
             entity.Property(e => e.Status)
+                .HasColumnType("Status")
                 .IsRequired();
 
-            entity.Property(e => e.Type);
+            entity.Property(e => e.Type)
+                .HasColumnType("TypeAppointment");
 
-            entity.Property(e => e.ActivityType);
+            entity.Property(e => e.ActivityType)
+                .HasColumnType("ActivityType");
 
             entity.Property(e => e.Reason)
                 .HasMaxLength(500);

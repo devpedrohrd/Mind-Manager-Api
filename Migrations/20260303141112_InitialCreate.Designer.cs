@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Mind_Manager.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260223132758_AddCreatedByUserIdAndEnumsToInt")]
-    partial class AddCreatedByUserIdAndEnumsToInt
+    [Migration("20260303141112_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -23,6 +23,17 @@ namespace Mind_Manager.Migrations
                 .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ActivityType", new[] { "Group", "Lecture", "Seminar", "Meeting", "DiscussionCircle" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "Courses", new[] { "Fisica", "Quimica", "Ads", "Eletrotecnica", "Administracao", "Informatica" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "CreatedBy", new[] { "Patient", "Psychologist" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "Difficulty", new[] { "Avaliation", "OrganizationOnStudies", "Concentration", "Memory", "Tdah", "Comunication", "Relationship", "Other" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "Education", new[] { "Medio", "Superior", "PosGraduacao", "Tecnico", "Mestrado" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "Gender", new[] { "Male", "Female", "Other" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "PatientType", new[] { "Student", "Contractor", "Guardian", "Teacher" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "PsychologicalDisorder", new[] { "Depression", "GeneralizedAnxiety", "BipolarDisorder", "Borderline", "Schizophrenia", "OCD", "PTSD", "ADHD", "Autism", "EatingDisorder", "SubstanceAbuse", "PersonalityDisorder", "PanicDisorder", "Psychosis", "Other" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "Status", new[] { "Scheduled", "Confirmed", "InProgress", "Completed", "Canceled", "NoShow" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "TypeAppointment", new[] { "Session", "CollectiveActivities", "AdministrativeRecords" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "UserRole", new[] { "Admin", "Client", "Psychologist" });
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Anamnesis", b =>
@@ -44,6 +55,9 @@ namespace Mind_Manager.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<Guid>("CreatedByPsychologistId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("FamilyHistory")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -61,6 +75,8 @@ namespace Mind_Manager.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedByPsychologistId");
+
                     b.HasIndex("PatientId");
 
                     b.ToTable("Anamneses");
@@ -73,7 +89,7 @@ namespace Mind_Manager.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int?>("ActivityType")
-                        .HasColumnType("integer");
+                        .HasColumnType("ActivityType");
 
                     b.Property<DateTime>("AppointmentDate")
                         .HasColumnType("timestamp with time zone");
@@ -102,10 +118,10 @@ namespace Mind_Manager.Migrations
                         .HasColumnType("character varying(500)");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer");
+                        .HasColumnType("Status");
 
                     b.Property<int?>("Type")
-                        .HasColumnType("integer");
+                        .HasColumnType("TypeAppointment");
 
                     b.HasKey("Id");
 
@@ -152,30 +168,30 @@ namespace Mind_Manager.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("Course")
-                        .HasColumnType("integer");
+                        .HasColumnType("Courses");
 
                     b.Property<int>("CreatedBy")
-                        .HasColumnType("integer");
+                        .HasColumnType("CreatedBy");
 
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<int[]>("Difficulties")
+                    b.PrimitiveCollection<int[]>("Difficulties")
                         .IsRequired()
-                        .HasColumnType("integer[]");
+                        .HasColumnType("Difficulty[]");
 
-                    b.Property<int[]>("Disorders")
+                    b.PrimitiveCollection<int[]>("Disorders")
                         .IsRequired()
-                        .HasColumnType("integer[]");
+                        .HasColumnType("PsychologicalDisorder[]");
 
                     b.Property<int?>("Education")
-                        .HasColumnType("integer");
+                        .HasColumnType("Education");
 
                     b.Property<int>("Gender")
-                        .HasColumnType("integer");
+                        .HasColumnType("Gender");
 
                     b.Property<int>("PatientType")
-                        .HasColumnType("integer");
+                        .HasColumnType("PatientType");
 
                     b.Property<string>("Registration")
                         .HasMaxLength(100)
@@ -198,83 +214,7 @@ namespace Mind_Manager.Migrations
                     b.ToTable("PatientProfiles");
                 });
 
-            modelBuilder.Entity("Mind_Manager.Domain.Entities.User", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("PsychologistProfile", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Crp")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("Specialty")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("PsychologistProfiles");
-                });
-
-            modelBuilder.Entity("Session", b =>
+            modelBuilder.Entity("Mind_Manager.Domain.Entities.Session", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -318,13 +258,97 @@ namespace Mind_Manager.Migrations
                     b.ToTable("Sessions");
                 });
 
+            modelBuilder.Entity("Mind_Manager.Domain.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("UserRole");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("PsychologistProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Crp")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Specialty")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("PsychologistProfiles");
+                });
+
             modelBuilder.Entity("Anamnesis", b =>
                 {
+                    b.HasOne("PsychologistProfile", "CreatedByPsychologist")
+                        .WithMany()
+                        .HasForeignKey("CreatedByPsychologistId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Mind_Manager.Domain.Entities.PatientProfile", "Patient")
                         .WithMany("Anamneses")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CreatedByPsychologist");
 
                     b.Navigation("Patient");
                 });
@@ -376,22 +400,11 @@ namespace Mind_Manager.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PsychologistProfile", b =>
-                {
-                    b.HasOne("Mind_Manager.Domain.Entities.User", "User")
-                        .WithOne("PsychologistProfile")
-                        .HasForeignKey("PsychologistProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Session", b =>
+            modelBuilder.Entity("Mind_Manager.Domain.Entities.Session", b =>
                 {
                     b.HasOne("Appointment", "Appointment")
                         .WithOne("Session")
-                        .HasForeignKey("Session", "AppointmentId")
+                        .HasForeignKey("Mind_Manager.Domain.Entities.Session", "AppointmentId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Mind_Manager.Domain.Entities.PatientProfile", "Patient")
@@ -411,6 +424,17 @@ namespace Mind_Manager.Migrations
                     b.Navigation("Patient");
 
                     b.Navigation("Psychologist");
+                });
+
+            modelBuilder.Entity("PsychologistProfile", b =>
+                {
+                    b.HasOne("Mind_Manager.Domain.Entities.User", "User")
+                        .WithOne("PsychologistProfile")
+                        .HasForeignKey("PsychologistProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Appointment", b =>
