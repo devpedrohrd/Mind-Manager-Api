@@ -44,18 +44,11 @@ public class PsychologistService(IUnitOfWork unitOfWork) : IPsychologistService
             Specialty = createDto.Specialty,
         };
 
-        await _unitOfWork.BeginTransactionAsync();
-        try
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await _unitOfWork.Users.UpdateAsync(user);
             await _unitOfWork.Psychologists.CreateAsync(psychologist);
-            await _unitOfWork.CommitTransactionAsync();
-        }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync();
-            throw;
-        }
+        });
 
         return new PsychologistResponse(
             Id: psychologist.Id,

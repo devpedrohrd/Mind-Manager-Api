@@ -49,8 +49,10 @@ public class PatientService(IUnitOfWork unitOfWork) : IPatientService
         if (createDto.Difficulties is not null)
             patientProfile.SetDifficulties(createDto.Difficulties);
 
-        await _unitOfWork.Patients.CreatePatientProfileAsync(patientProfile);
-        await _unitOfWork.CommitTransactionAsync();
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.Patients.CreatePatientProfileAsync(patientProfile);
+        });
 
         return patientProfile.ToDto();
     }
@@ -133,8 +135,10 @@ public class PatientService(IUnitOfWork unitOfWork) : IPatientService
             foreach (var difficulty in updateDto.DifficultiestoRemove)
                 patientProfile.RemoveDifficulty(difficulty);
 
-        await _unitOfWork.Patients.UpdatePatientProfileAsync(patientProfile);
-        await _unitOfWork.CommitTransactionAsync();
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.Patients.UpdatePatientProfileAsync(patientProfile);
+        });
 
         return patientProfile.ToDto();
     }

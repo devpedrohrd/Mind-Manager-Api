@@ -3,10 +3,8 @@ namespace Mind_Manager.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Mind_Manager.Domain.Entities;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
-
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<PsychologistProfile> PsychologistProfiles { get; set; } = null!;
     public DbSet<PatientProfile> PatientProfiles { get; set; } = null!;
@@ -309,6 +307,8 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.PatientId).IsRequired();
 
+            entity.Property(e => e.CreatedByPsychologistId).IsRequired();
+
             entity.Property(e => e.FamilyHistory)
                 .HasMaxLength(1000);
 
@@ -327,11 +327,17 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            // Relacionamento
+            // Relacionamento com Paciente
             entity.HasOne(a => a.Patient)
                 .WithMany(p => p.Anamneses)
                 .HasForeignKey(a => a.PatientId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Relacionamento com Psicólogo criador (isolamento de dados)
+            entity.HasOne(a => a.CreatedByPsychologist)
+                .WithMany()
+                .HasForeignKey(a => a.CreatedByPsychologistId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // --- EMAIL SCHEDULE ---
