@@ -8,7 +8,7 @@ public class Appointment
     public Guid PsychologistId { get; set; }
     public Guid? PatientId { get; set; }
     public DateTime AppointmentDate { get; set; }
-    public Status Status { get; set; } = Status.Pending;
+    public Status Status { get; private set; } = Status.Scheduled;
     public TypeAppointment? Type { get; set; }
     public ActivityType? ActivityType { get; set; }
     public string? Reason { get; set; }
@@ -25,7 +25,7 @@ public class Appointment
         Guid psychologistId,
         Guid? patientId,
         DateTime appointmentDate,
-        Status status = Status.Pending,
+        Status status = Status.Scheduled,
         TypeAppointment? type = null,
         ActivityType? activityType = null,
         string? reason = null,
@@ -50,8 +50,24 @@ public class Appointment
         Objective = objective;
     }
 
-    public void ToUpdateCommand(
-        Status? status,
+    /// <summary>
+    /// Altera o status do agendamento validando a transição via State Machine.
+    /// </summary>
+    /// <param name="newStatus">Novo status desejado.</param>
+    /// <exception cref="BusinessException">Se a transição for inválida.</exception>
+    public void ChangeStatus(Status newStatus)
+    {
+        if (newStatus == Status)
+            return;
+
+        AppointmentStateMachine.ValidateTransition(Status, newStatus);
+        Status = newStatus;
+    }
+
+    /// <summary>
+    /// Atualiza os campos editáveis do agendamento. Para alterar Status, use <see cref="ChangeStatus"/>.
+    /// </summary>
+    public void UpdateDetails(
         TypeAppointment? type,
         DateTime? appointmentDate,
         ActivityType? activityType,
@@ -60,7 +76,6 @@ public class Appointment
         string? objective
     )
     {
-        Status = status ?? Status;
         Type = type ?? Type;
         AppointmentDate = appointmentDate ?? AppointmentDate;
         ActivityType = activityType ?? ActivityType;
@@ -68,6 +83,4 @@ public class Appointment
         Observation = observation ?? Observation;
         Objective = objective ?? Objective;
     }
-
-
 }

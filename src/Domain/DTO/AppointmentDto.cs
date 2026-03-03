@@ -6,7 +6,7 @@ namespace Mind_Manager.src.Domain.DTO;
 public record CreateAppointmentCommand(
     Guid? PsychologistId,
     Guid? PatientId = null,
-    Status Status = Status.Pending,
+    Status Status = Status.Scheduled,
     TypeAppointment? Type = null,
     DateTime AppointmentDate = default,
     ActivityType? ActivityType = null,

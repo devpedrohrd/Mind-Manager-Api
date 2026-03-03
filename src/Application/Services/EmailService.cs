@@ -95,7 +95,7 @@ public class EmailService : IEmailService
             var (statusText, statusColor) = status switch
             {
                 Status.Confirmed => ("Confirmado", "#28a745"),
-                Status.Pending => ("Pendente", "#ffc107"),
+                Status.Scheduled => ("Agendado", "#ffc107"),
                 _ => (status.ToString(), "#6c757d")
             };
 

@@ -8,27 +8,28 @@ namespace Mind_Manager.src.Application.Services;
 
 public interface IAnamneseService
 {
-    Task<AnamnesisResponse> CreateAnamnesisAsync(CreateAnamnesisCommand command, bool isPsychologist);
-    Task<AnamnesisResponse?> GetAnamnesisByIdAsync(Guid anamnesisId, bool isPsychologist);
-    Task<bool> UpdateAnamnesisAsync(Guid anamnesisId, UpdateAnamnesisCommand command, bool isPsychologist);
-    Task<bool> DeleteAnamnesisAsync(Guid anamnesisId, bool isPsychologist);
+    Task<AnamnesisResponse> CreateAnamnesisAsync(CreateAnamnesisCommand command, Guid userIdRequesting);
+    Task<AnamnesisResponse?> GetAnamnesisByIdAsync(Guid anamnesisId, Guid userIdRequesting);
+    Task<bool> UpdateAnamnesisAsync(Guid anamnesisId, UpdateAnamnesisCommand command, Guid userIdRequesting);
+    Task<bool> DeleteAnamnesisAsync(Guid anamnesisId, Guid userIdRequesting);
 }
-public class AnamneseService(IAnamnesis anamnesisRepository, IUnitOfWork unitOfWork, IPatientService patientService) : IAnamneseService
+public class AnamneseService(IAnamnesis anamnesisRepository, IUnitOfWork unitOfWork, IPatientService patientService, IPsychologistService psychologistService) : IAnamneseService
 {
     private readonly IAnamnesis _anamnesisRepository = anamnesisRepository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IPatientService _patientService = patientService;
-    public async Task<AnamnesisResponse> CreateAnamnesisAsync(CreateAnamnesisCommand command, bool isPsychologist)
+    private readonly IPsychologistService _psychologistService = psychologistService;
+
+    public async Task<AnamnesisResponse> CreateAnamnesisAsync(CreateAnamnesisCommand command, Guid userIdRequesting)
     {
-        if (!isPsychologist)
-        {
-            throw new UnauthorizedAccessException("Psychologist profile not found.");
-        }
+        var psychologist = await _psychologistService.GetByUserIdAsync(userIdRequesting)
+            ?? throw new UnauthorizedAccessException("Perfil de psicólogo não encontrado.");
 
         _ = await _patientService.GetByIdAsync(command.PatientId) ?? throw new NotFoundException("Patient not found.");
 
         var anamnesis = new Anamnesis(
             command.PatientId,
+            psychologist.Id,
             command.FamilyHistory,
             command.Infancy,
             command.Adolescence,
@@ -45,12 +46,12 @@ public class AnamneseService(IAnamnesis anamnesisRepository, IUnitOfWork unitOfW
         return createdAnamnesis.ToResponseDto();
     }
 
-    public async Task<bool> DeleteAnamnesisAsync(Guid anamnesisId, bool isPsychologist)
+    public async Task<bool> DeleteAnamnesisAsync(Guid anamnesisId, Guid userIdRequesting)
     {
-        if (!isPsychologist)
-        {
-            throw new UnauthorizedAccessException("Psychologist profile not found.");
-        }
+        var anamnesis = await _anamnesisRepository.GetAnamnesisByIdAsync(anamnesisId)
+            ?? throw new NotFoundException("Anamnesis not found.");
+
+        await ValidateOwnershipAsync(anamnesis, userIdRequesting);
 
         var result = await _anamnesisRepository.DeleteAnamnesisAsync(anamnesisId);
         if (result)
@@ -58,25 +59,22 @@ public class AnamneseService(IAnamnesis anamnesisRepository, IUnitOfWork unitOfW
         return result;
     }
 
-    public async Task<AnamnesisResponse?> GetAnamnesisByIdAsync(Guid anamnesisId, bool isPsychologist)
+    public async Task<AnamnesisResponse?> GetAnamnesisByIdAsync(Guid anamnesisId, Guid userIdRequesting)
     {
-        if (!isPsychologist)
-        {
-            throw new UnauthorizedAccessException("Psychologist profile not found.");
-        }
-
         var anamnesis = await _anamnesisRepository.GetAnamnesisByIdAsync(anamnesisId);
-        return anamnesis?.ToResponseDto();
+        if (anamnesis is null) return null;
+
+        await ValidateOwnershipAsync(anamnesis, userIdRequesting);
+
+        return anamnesis.ToResponseDto();
     }
 
-    public async Task<bool> UpdateAnamnesisAsync(Guid anamnesisId, UpdateAnamnesisCommand command, bool isPsychologist)
+    public async Task<bool> UpdateAnamnesisAsync(Guid anamnesisId, UpdateAnamnesisCommand command, Guid userIdRequesting)
     {
-        if (!isPsychologist)
-        {
-            throw new UnauthorizedAccessException("Psychologist profile not found.");
-        }
+        var existingAnamnesis = await _anamnesisRepository.GetAnamnesisByIdAsync(anamnesisId)
+            ?? throw new NotFoundException("Anamnesis not found.");
 
-        var existingAnamnesis = await _anamnesisRepository.GetAnamnesisByIdAsync(anamnesisId) ?? throw new NotFoundException("Anamnesis not found.");
+        await ValidateOwnershipAsync(existingAnamnesis, userIdRequesting);
 
         existingAnamnesis.UpdateAnamnesis(
             command.FamilyHistory ?? existingAnamnesis.FamilyHistory,
@@ -85,10 +83,22 @@ public class AnamneseService(IAnamnesis anamnesisRepository, IUnitOfWork unitOfW
             command.Illnesses ?? existingAnamnesis.Illnesses,
             command.Accompaniment ?? existingAnamnesis.Accompaniment);
 
-        await _anamnesisRepository.UpdateAnamnesisAsync(existingAnamnesis.Id,existingAnamnesis);
+        await _anamnesisRepository.UpdateAnamnesisAsync(existingAnamnesis.Id, existingAnamnesis);
         await _unitOfWork.SaveChangesAsync();
 
         return true;
+    }
+
+    /// <summary>
+    /// Valida se o psicólogo autenticado é o criador da anamnese.
+    /// </summary>
+    private async Task ValidateOwnershipAsync(Anamnesis anamnesis, Guid userIdRequesting)
+    {
+        var psychologist = await _psychologistService.GetByUserIdAsync(userIdRequesting)
+            ?? throw new UnauthorizedAccessException("Perfil de psicólogo não encontrado.");
+
+        if (anamnesis.CreatedByPsychologistId != psychologist.Id)
+            throw new UnauthorizedException("Você não tem permissão para acessar esta anamnese.");
     }
 }
 

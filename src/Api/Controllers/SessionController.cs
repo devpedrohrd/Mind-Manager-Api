@@ -24,7 +24,8 @@ namespace Mind_Manager.src.Api.Controllers
         [Authorize(Roles = "Admin,Psychologist")]
         public async Task<SessionResponse> CreateSession([FromBody] CreateSessionCommand createSessionDto)
         {
-            var createdSession = await _sessionService.CreateSessionAsync(createSessionDto);
+            var (userId, _) = _userLoggedHandler.GetUserIdAndRole(User);
+            var createdSession = await _sessionService.CreateSessionAsync(createSessionDto, userId ?? Guid.Empty);
             _logger.LogInformation("Session created with ID {SessionId} for psychologist {PsychologistId} and patient {PatientId}", createdSession.Id, createdSession.PsychologistId, createdSession.PatientId);
             return createdSession;
         }

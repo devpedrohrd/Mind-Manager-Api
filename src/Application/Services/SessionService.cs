@@ -9,7 +9,7 @@ namespace Mind_Manager.src.Application.Services;
 
 public interface ISessionService
 {
-    Task<SessionResponse> CreateSessionAsync(CreateSessionCommand createSessionDto);
+    Task<SessionResponse> CreateSessionAsync(CreateSessionCommand createSessionDto, Guid userIdRequesting);
     Task<SessionResponse?> GetSessionByIdAsync(Guid sessionId, Guid userIdRequesting, bool isPsychologist);
     Task<SearchSessionsResponse> GetSessionsByFilterAsync(SearchSessionsQuery filters, Guid userIdRequesting, bool isPsychologist);
     Task<bool> UpdateSessionAsync(Guid sessionId, UpdateSessionCommand updateSessionDto, Guid userIdRequesting, bool isPsychologist);
@@ -21,8 +21,15 @@ public class SessionService(ISession sessionRepository, IPsychologistService psy
     private readonly IPsychologistService _psychologistService = psychologistService;
     private readonly IPatientService _patientService = patientService;
     private readonly IAppointmentService _appointmentService = appointmentService;
-    public async Task<SessionResponse> CreateSessionAsync(CreateSessionCommand createSessionDto)
+    public async Task<SessionResponse> CreateSessionAsync(CreateSessionCommand createSessionDto, Guid userIdRequesting)
     {
+        // Validar que o psicólogo logado é o dono da sessão
+        var loggedPsychologist = await _psychologistService.GetByUserIdAsync(userIdRequesting)
+            ?? throw new UnauthorizedAccessException("Perfil de psicólogo não encontrado.");
+
+        if (loggedPsychologist.Id != createSessionDto.PsychologistId)
+            throw new UnauthorizedException("Você não pode criar sessões em nome de outro psicólogo.");
+
         var psychologist = await _psychologistService.GetByIdAsync(createSessionDto.PsychologistId);
         var patientExists = await _patientService.GetByIdAsync(createSessionDto.PatientId) != null;
         if (psychologist == null || !patientExists)

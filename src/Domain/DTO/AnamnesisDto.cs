@@ -21,9 +21,10 @@ public record UpdateAnamnesisCommand(
 public record AnamnesisResponse(
     Guid Id,
     Guid PatientId,
+    Guid CreatedByPsychologistId,
     string? FamilyHistory,
-    string? SocialHistory,
-    string? PsychologicalHistory,
+    string? Infancy,
+    string? Adolescence,
     string? Illnesses,
     string? Accompaniment,
     DateTime CreatedAt

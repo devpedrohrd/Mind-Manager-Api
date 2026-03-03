@@ -127,22 +127,27 @@ public class AppointmentService(IAppointment appointmentRepository,IPatientServi
 
     public async Task<bool> UpdateAppointmentAsync(Guid appointmentId, UpdateAppointmentCommand updateAppointmentDto, Guid userIdRequesting, bool isPsychologist)
     {
-        var appointmentResult = await _appointmentRepository.GetAppointmentByIdAsync(appointmentId) ?? throw new NotFoundException("Appointment not found.");
-        var existingAppointment = appointmentResult;
+        var existingAppointment = await _appointmentRepository.GetAppointmentByIdAsync(appointmentId) ?? throw new NotFoundException("Appointment not found.");
 
         var psychologistProfile = await _psychologistService.GetByUserIdAsync(userIdRequesting);
         
         if (psychologistProfile == null || existingAppointment.PsychologistId != psychologistProfile.Id || !isPsychologist)
             throw new UnauthorizedException("You are not authorized to update this appointment.");
 
-        appointmentResult.ToUpdateCommand(
-            updateAppointmentDto.Status ?? existingAppointment.Status,
-            updateAppointmentDto.Type ?? existingAppointment.Type,
-            updateAppointmentDto.AppointmentDate ?? existingAppointment.AppointmentDate,
-            updateAppointmentDto.ActivityType ?? existingAppointment.ActivityType,
-            updateAppointmentDto.Reason ?? existingAppointment.Reason,
-            updateAppointmentDto.Observation ?? existingAppointment.Observation,
-            updateAppointmentDto.Objective ?? existingAppointment.Objective
+        // Alteração de status via State Machine
+        if (updateAppointmentDto.Status.HasValue)
+        {
+            existingAppointment.ChangeStatus(updateAppointmentDto.Status.Value);
+        }
+
+        // Atualizar os demais campos editáveis
+        existingAppointment.UpdateDetails(
+            updateAppointmentDto.Type,
+            updateAppointmentDto.AppointmentDate,
+            updateAppointmentDto.ActivityType,
+            updateAppointmentDto.Reason,
+            updateAppointmentDto.Observation,
+            updateAppointmentDto.Objective
         );
 
         // Se a data foi alterada ou o status mudou para Cancelado, invalida emails agendados
@@ -155,7 +160,7 @@ public class AppointmentService(IAppointment appointmentRepository,IPatientServi
             await _emailSchedule.DeleteByAppointmentIdAsync(appointmentId);
         }
 
-        await _appointmentRepository.UpdateAppointmentAsync(appointmentResult);
+        await _appointmentRepository.UpdateAppointmentAsync(existingAppointment);
         await _unitOfWork.SaveChangesAsync();
         return true;
     }

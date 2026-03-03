@@ -82,7 +82,7 @@ public class AppointmentRepository(ApplicationDbContext context) : IAppointment
             .Include(a => a.EmailSchedules)
             .Where(a => a.AppointmentDate <= DateTime.Now &&
                 a.AppointmentDate < tomorrow &&
-                (a.Status == Status.Pending || a.Status == Status.Confirmed))
+                (a.Status == Status.Scheduled || a.Status == Status.Confirmed))
             .ToListAsync();
 
         var response = new AppointmentsPendingsResponse(
@@ -110,7 +110,7 @@ public class AppointmentRepository(ApplicationDbContext context) : IAppointment
             .Include(a => a.EmailSchedules)
             .Where(a => a.AppointmentDate >= todayUtc
                 && a.AppointmentDate < tomorrowUtc
-                && (a.Status == Status.Pending || a.Status == Status.Confirmed)
+                && (a.Status == Status.Scheduled || a.Status == Status.Confirmed)
                 && a.Patient != null
                 && a.Patient.User.IsActive)
             .ToListAsync();

@@ -6,6 +6,7 @@ public class Anamnesis
 {
     public Guid Id { get; set; }
     public Guid PatientId { get; set; }
+    public Guid CreatedByPsychologistId { get; set; }
     public string? FamilyHistory { get; set; }
     public string? Infancy { get; set; }
     public string? Adolescence { get; set; }
@@ -14,14 +15,18 @@ public class Anamnesis
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public virtual PatientProfile Patient { get; set; } = null!;
+    public virtual PsychologistProfile CreatedByPsychologist { get; set; } = null!;
 
-    public Anamnesis(Guid patientId, string? familyHistory = null, string? infancy = null, string? adolescence = null, string? illnesses = null, string? accompaniment = null)
+    public Anamnesis(Guid patientId, Guid createdByPsychologistId, string? familyHistory = null, string? infancy = null, string? adolescence = null, string? illnesses = null, string? accompaniment = null)
     {
         if (patientId == Guid.Empty)
             throw new ValidationException("O ID do paciente não pode ser vazio.");
+        if (createdByPsychologistId == Guid.Empty)
+            throw new ValidationException("O ID do psicólogo criador não pode ser vazio.");
 
         Id = Guid.NewGuid();
         PatientId = patientId;
+        CreatedByPsychologistId = createdByPsychologistId;
         FamilyHistory = familyHistory;
         Infancy = infancy;
         Adolescence = adolescence;
@@ -44,6 +49,7 @@ public class Anamnesis
         return new AnamnesisResponse(
             Id,
             PatientId,
+            CreatedByPsychologistId,
             FamilyHistory,
             Infancy,
             Adolescence,
